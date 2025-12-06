@@ -15,13 +15,13 @@
     color: #fff;
   }
 
-  / Fondo de partículas primera pantalla /
+  /* Fondo de partículas */
   #particles {
     position: absolute;
     width: 100%;
     height: 100%;
     z-index: 0;
-    background: radial-gradient(circle at top, #000000, #111111);
+    background: transparent;
   }
 
   .particle {
@@ -31,7 +31,7 @@
     opacity: 0.8;
   }
 
-  / Pantallas /
+  /* Pantallas */
   .screen {
     position: absolute;
     width: 100%;
@@ -45,7 +45,9 @@
     transition: opacity 1s ease;
   }
 
-  .hidden { display: none; }
+  .hidden {
+    display: none;
+  }
 
   h1.title {
     font-size: 4em;
@@ -59,7 +61,7 @@
     animation: fadeUp 2s ease forwards;
   }
 
-  / Discord logos /
+  /* Logos de Discord */
   .discord-logos {
     display: flex;
     gap: 2em;
@@ -67,12 +69,19 @@
     animation: fadeIn 2s ease forwards;
   }
 
+  .discord-logos div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #fff;
+  }
+
   .discord-logos img {
     width: 50px;
     height: 50px;
   }
 
-  / Botones segunda pantalla /
+  /* Botones segunda pantalla */
   .btn {
     padding: 1em 2em;
     font-size: 1.2em;
@@ -89,7 +98,7 @@
     transform: scale(1.1);
   }
 
- / Animaciones /
+  /* Animaciones */
   @keyframes fadeDown {
     0% {opacity: 0; transform: translateY(-50px);}
     100% {opacity: 1; transform: translateY(0);}
@@ -105,7 +114,7 @@
     100% {opacity: 1;}
   }
 
-  / Tercera pantalla /
+  /* Tercera pantalla */
   .key-box {
     margin-top: 1em;
     padding: 0.5em 1em;
@@ -135,82 +144,13 @@
   <h1 class="title">Génesis Hub V2</h1>
   <h2 class="subtitle">Made by Jesús and Alejandro</h2>
   <div class="discord-logos">
-    <div><img src="discord-logo1.png" alt="Discord 1"><div>jesusms13</div></div>
-    <div><img src="discord-logo2.png" alt="Discord 2"><div>scripman83</div></div>
+    <div><img src="discord-logo1.png" alt="Discord 1"><span>jesusms13</span></div>
+    <div><img src="discord-logo2.png" alt="Discord 2"><span>scripman83</span></div>
   </div>
 </div>
 
 <!-- Pantalla 2 -->
 <div id="screen2" class="screen hidden">
-  <h1 class="title">Create Your Key</h1>
-  <button id="createKeyBtn" class="btn">Create the Key</button>
-  <button id="tutorialBtn" class="btn">Tutorial</button>
-</div>
-
-<!-- Pantalla 3 -->
-<div id="screen3" class="screen hidden">
-  <h1 class="title">Your Key</h1>
-  <div class="key-box">
-    <span id="keyValue">XXXXXXXXXXXX</span>
-    <button class="copy-btn" onclick="copyKey()">Copy</button>
-  </div>
-</div>
-
-<!-- Partículas -->
-<div id="particles"></div>
-
-<script>
-  //
-  const particlesContainer = document.getElementById('particles');
-  const particleCount = 100;
-  for (let i = 0; i < particleCount; i++) {
-    const p = document.createElement('div');
-    p.classList.add('particle');
-    p.style.width = Math.random()*5 + 2 + "px";
-    p.style.height = p.style.width;
-    p.style.top = Math.random() * window.innerHeight + "px";
-    p.style.left = Math.random() * window.innerWidth + "px";
-    particlesContainer.appendChild(p);
-  }
-
-  const particles = document.querySelectorAll('.particle');
-  setInterval(() => {
-    particles.forEach(p => {
-      let newTop = parseFloat(p.style.top) + (Math.random()*2-1);
-      let newLeft = parseFloat(p.style.left) + (Math.random()*2-1);
-      p.style.top = `${newTop}px`;
-      p.style.left = `${newLeft}px`;
-    });
-  }, 50);
-
-  //
-  setTimeout(() => {
-    document.getElementById('screen1').classList.add('hidden');
-    document.getElementById('screen2').classList.remove('hidden');
-  }, 10000); // 10 segundos pantalla 1
-
-  const createKeyBtn = document.getElementById('createKeyBtn');
-  createKeyBtn.addEventListener('click', () => {
-    fetch('/generar')
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('keyValue').textContent = data.k;
-        document.getElementById('screen2').classList.add('hidden');
-        document.getElementById('screen3').classList.remove('hidden');
-      });
-  });
-
-  const tutorialBtn = document.getElementById('tutorialBtn');
-  tutorialBtn.addEventListener('click', () => {
-    window.open('', '_blank'); // Aquí puedes poner el link de YouTube del tutorial
-  });
-
-  function copyKey() {
-    const key = document.getElementById('keyValue').textContent;
-    navigator.clipboard.writeText(key).then(() => {
-      alert('Key copied!');
-    });
-  }
-</script>
-</body>
-</html>
+  <h1 class="title">Génesis Hub V2</h1>
+  <button id="createKeyBtn" class="btn">Create Your Key</button>
+  <button id="tutorialBtn" class="btn">Tutorial</
