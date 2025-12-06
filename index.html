@@ -1,64 +1,259 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GÉNESIS HUB</title>
+<title>Genesis Hub V2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{height:100vh;background:#0a0f1c;display:flex;justify-content:center;align-items:center;font-family:sans-serif;color:#fff;overflow:hidden;}
-.i{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;letter-spacing:2px;background:#02030f;z-index:10;animation:intro 3s forwards;}
-.c{background:rgba(5,10,30,.92);border-radius:26px;padding:28px;width:92%;max-width:430px;text-align:center;box-shadow:0 0 80px #00c8ff;opacity:0;animation:p 1s ease;animation-delay:3s;animation-fill-mode:forwards;}
-.b{width:100%;margin-top:14px;padding:15px;border:0;border-radius:40px;font-weight:800;letter-spacing:1px;cursor:pointer;color:#000;transition:.2s;}
-.b:hover{transform:scale(1.05);}
-.b.l{background:linear-gradient(135deg,#9b59ff,#00d4ff);}
-.b.k{background:linear-gradient(135deg,#00ffa2,#00ffcc);}
-.r{margin-top:22px;background:#0008;padding:16px;border-radius:12px;word-break:break-word;font-weight:700;min-height:48px;}
-.g{position:absolute;width:2px;height:2px;background:#00c8ff;animation:f 6s linear infinite;}
-@keyframes f{0%{transform:translateY(-100vh)}100%{transform:translateY(100vh)}}
-@keyframes p{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
-@keyframes intro{0%{opacity:0;transform:scale(.5)}20%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0;visibility:hidden}}
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+}
+body{
+    background:#05060b;
+    overflow:hidden;
+    color:white;
+}
+
+.particle{
+    position:fixed;
+    top:-10px;
+    width:2px;
+    height:2px;
+    background:white;
+    animation:fall linear infinite;
+    opacity:.8;
+}
+@keyframes fall{
+    from{transform:translateY(0)}
+    to{transform:translateY(110vh)}
+}
+
+.section{
+    width:100vw;
+    height:100vh;
+    position:absolute;
+    top:0;
+    left:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    transition:opacity 1s;
+}
+
+#splash{
+    background:radial-gradient(circle at top,#0b1020,#02020a);
+    z-index:3;
+}
+
+#main{
+    display:none;
+    background:linear-gradient(180deg,#05060b,#0b1020);
+    z-index:2;
+}
+
+#keypage{
+    display:none;
+    background:linear-gradient(180deg,#02020a,#070c1a);
+    z-index:1;
+}
+
+.title{
+    font-size:54px;
+    font-weight:900;
+    letter-spacing:3px;
+    animation:drop 1.5s ease;
+}
+@keyframes drop{
+    from{transform:translateY(-200px);opacity:0}
+    to{transform:translateY(0);opacity:1}
+}
+
+.subtitle{
+    margin-top:15px;
+    font-size:18px;
+    opacity:.8;
+    animation:fade 2s ease;
+}
+
+@keyframes fade{
+    from{opacity:0}
+    to{opacity:.8}
+}
+
+.btn{
+    margin-top:25px;
+    padding:16px 35px;
+    border-radius:50px;
+    border:none;
+    cursor:pointer;
+    font-size:16px;
+    font-weight:700;
+    background:linear-gradient(135deg,#4e00ff,#00eaff);
+    color:#000;
+    transition:.25s;
+}
+.btn:hover{
+    transform:scale(1.07);
+    box-shadow:0 0 20px #00eaff;
+}
+
+.tutorial{
+    background:linear-gradient(135deg,#ff006a,#ffb300);
+}
+
+.footer{
+    position:absolute;
+    bottom:25px;
+    display:flex;
+    gap:40px;
+    font-size:14px;
+    opacity:.85;
+}
+
+.discord{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.discord img{
+    width:18px;
+    height:18px;
+}
+
+.keybox{
+    margin-top:30px;
+    background:#000;
+    padding:20px 30px;
+    border-radius:12px;
+    font-size:18px;
+    letter-spacing:2px;
+    box-shadow:0 0 20px #00eaff;
+}
+
+.copy{
+    margin-top:12px;
+    cursor:pointer;
+    opacity:.8;
+    font-size:14px;
+}
+.copy:hover{opacity:1}
+
+.block{
+    position:fixed;
+    inset:0;
+    background:#000;
+    color:white;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    z-index:99;
+}
 </style>
 </head>
+
 <body>
 
-<div class="i">GÉNESIS HUB</div>
-
-<div class="c">
-  <button class="b" onclick="copyLink()">Copiar Link</button>
-  <button class="b l" onclick="goLinkvertise()">Publicidad</button>
-  <button class="b k" onclick="generateKey()">Generar Key</button>
-  <div class="r" id="x">...</div>
+<div id="block" class="block" style="display:none;">
+    <h1>Access Denied</h1>
+    <p>You must complete the verification first.</p>
 </div>
 
 <script>
-// Fondo animado
-for(let i=0;i<80;i++){
-  let e=document.createElement("div");
-  e.className="g";
-  e.style.left=Math.random()*100+"vw";
-  e.style.animationDelay=Math.random()*6+"s";
-  document.body.appendChild(e);
+const allowed = "link-hub.net";
+if(document.referrer.toLowerCase().includes(allowed) === false){
+    document.getElementById("block").style.display="flex";
+}
+</script>
+
+<script>
+for(let i=0;i<120;i++){
+    let p=document.createElement("div");
+    p.className="particle";
+    p.style.left=Math.random()*100+"vw";
+    p.style.animationDuration=(Math.random()*6+4)+"s";
+    p.style.opacity=Math.random();
+    document.body.appendChild(p);
+}
+</script>
+
+<div id="splash" class="section">
+    <div class="title">GENESIS HUB V2</div>
+    <div class="subtitle">Welcome</div>
+
+    <div class="footer">
+        <div class="discord">
+            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111370.png">
+            <span>jesusms13</span>
+        </div>
+        <div class="discord">
+            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111370.png">
+            <span>scripman83</span>
+        </div>
+    </div>
+</div>
+
+<div id="main" class="section">
+    <div class="title">GENESIS HUB V2</div>
+
+    <button class="btn" onclick="toKey()">Create The Key</button>
+
+    <button class="btn tutorial" onclick="openTutorial()">Key Tutorial</button>
+
+    <div class="subtitle" style="margin-top:30px;">
+        Thank you very much for choosing us.
+    </div>
+</div>
+
+<div id="keypage" class="section">
+    <div class="title">YOUR KEY</div>
+
+    <div class="keybox" id="keyBox">-----</div>
+    <div class="copy" onclick="copyKey()">Copy to clipboard</div>
+</div>
+
+<script>
+setTimeout(()=>{
+    document.getElementById("splash").style.opacity="0";
+    setTimeout(()=>{
+        document.getElementById("splash").style.display="none";
+        document.getElementById("main").style.display="flex";
+    },1000);
+},10000);
+
+function toKey(){
+    document.getElementById("main").style.display="none";
+    document.getElementById("keypage").style.display="flex";
+    generateKey();
 }
 
-// Funciones botones
-const baseUrl = location.origin + "/genesis";
-function copyLink(){
-  navigator.clipboard.writeText(baseUrl).then(()=>showMessage("✔ Link copiado"));
+function openTutorial(){
+    window.open("#","_blank"); 
 }
-function goLinkvertise(){
-  location.href="https://direct-link.net/1457911/LTFEqlNIZDOA";
-}
+
 function generateKey(){
-  fetch("/generar")
-  .then(r=>r.json())
-  .then(j=>{
-    if(j.k) showMessage(`Key: ${j.k} | ${j.t}`);
-    else showMessage(`Espera: ${j.e}`);
-  })
+    fetch("/generar")
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.key){
+            document.getElementById("keyBox").innerText=d.key;
+            navigator.clipboard.writeText(d.key);
+        }else{
+            document.getElementById("keyBox").innerText="ERROR";
+        }
+    });
 }
-function showMessage(msg){
-  document.getElementById("x").innerText = msg;
+
+function copyKey(){
+    let k=document.getElementById("keyBox").innerText;
+    navigator.clipboard.writeText(k);
 }
 </script>
 
