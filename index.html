@@ -5,148 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Génesis Hub V2</title>
 <style>
-    /* Estilos generales */
-    body, html {margin:0; padding:0; font-family: Arial, sans-serif; overflow-x:hidden; background:#0a0a0a; color:#fff;}
-    .section {width:100%; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; text-align:center;}
-    .hidden {display:none;}
-    h1 {font-size:4em; margin:0;}
-    h3 {font-size:1.2em; margin:10px 0;}
-    button {padding:15px 30px; font-size:1.2em; cursor:pointer; border:none; border-radius:10px; transition: all 0.3s ease;}
-    button:hover {transform:scale(1.1);}
-    #keyBox {padding:10px; width:300px; text-align:center; border-radius:5px; border:none; font-size:1.2em;}
-    #copyKeyBtn {margin-top:10px; background: #28a745; color:#fff;}
-    #createKeyBtn {background: linear-gradient(45deg, #ff416c, #ff4b2b); color:#fff; margin-bottom:15px;}
-    #tutorialBtn {background: linear-gradient(45deg, #1e90ff, #00bfff); color:#fff;}
-
-    /* Logos de Discord */
-    .discord-logos {position:absolute; bottom:20px; display:flex; gap:20px; justify-content:center; width:100%;}
-    .discord-logos img {width:40px; height:40px; margin-right:10px;}
-    .discord-user {font-size:1em; color:#fff; display:flex; align-items:center;}
-
-    /* Animaciones de partículas primera sección */
-    canvas {position:absolute; top:0; left:0; z-index:-1;}
+body, html {margin:0; padding:0; height:100%; font-family: 'Arial', sans-serif; background:#0d0d0d; color:#fff; overflow-x:hidden;}
+.screen {display:none; width:100%; height:100%; justify-content:center; align-items:center; flex-direction:column; position:absolute; top:0; left:0;}
+.active {display:flex;}
+h1 {font-size:4em; margin:0; animation: drop 1s ease forwards;}
+h2 {font-size:1.5em; margin-top:10px; animation: fadeIn 2s ease forwards;}
+h3 {font-size:1em; margin-top:20px; animation: fadeIn 2s ease forwards;}
+.discord-logos {display:flex; margin-top:20px; animation: fadeIn 2s ease forwards;}
+.discord-logos div {display:flex; align-items:center; margin:0 10px;}
+.discord-logos img {width:40px; height:40px; margin-right:5px;}
+.button {padding:15px 30px; margin:10px; border:none; cursor:pointer; font-size:1.2em; border-radius:8px; background: linear-gradient(135deg,#FF6B00,#FF9933); color:white; transition: all 0.3s ease;}
+.button:hover {transform: scale(1.05);}
+#key-box {padding:10px; border-radius:5px; background:#222; margin-top:10px; width:300px; text-align:center; font-size:1.2em; user-select: all;}
+#copy-btn {margin-left:10px; cursor:pointer;}
+canvas {position:absolute; top:0; left:0; width:100%; height:100%; z-index:-1;}
+@keyframes drop {0% {transform: translateY(-200px);} 100% {transform: translateY(0);}}
+@keyframes fadeIn {from {opacity:0;} to {opacity:1;}}
+@keyframes floatText {0%{transform:translateY(0);}50%{transform:translateY(-10px);}100%{transform:translateY(0);}}
+.animate-text {display:inline-block; animation:floatText 2s ease-in-out infinite;}
 </style>
 </head>
 <body>
 
-<!-- SECCIÓN 1 -->
-<div class="section" id="section1">
-    <h1>Génesis Hub V2</h1>
-    <h3>Made by Jesús and Alejandro</h3>
+<canvas id="particles"></canvas>
+
+<!-- Primera pantalla -->
+<div class="screen active" id="screen1">
+    <h1 class="animate-text">Génesis Hub V2</h1>
+    <h2 class="animate-text">Made by Jesús and Alejandro</h2>
+    <h3 class="animate-text">Thank you for choosing us</h3>
     <div class="discord-logos">
-        <div class="discord-user"><img src="discord-logo1.png" alt="Discord"> jesusms13</div>
-        <div class="discord-user"><img src="discord-logo2.png" alt="Discord"> scripman83</div>
+        <div><img src="discord.png" alt="Discord"><span>jesusms13</span></div>
+        <div><img src="discord.png" alt="Discord"><span>scripman83</span></div>
     </div>
+    <button class="button" onclick="nextScreen(2)">Enter</button>
 </div>
 
-<!-- SECCIÓN 2 -->
-<div class="section hidden" id="section2">
-    <h1>Create Your Key</h1>
-    <button id="createKeyBtn">Create Key</button>
-    <button id="tutorialBtn">Tutorial</button>
-    <h3>Thank you for choosing us</h3>
-    <div class="discord-logos">
-        <div class="discord-user"><img src="discord-logo1.png" alt="Discord"> jesusms13</div>
-        <div class="discord-user"><img src="discord-logo2.png" alt="Discord"> scripman83</div>
-    </div>
+<!-- Segunda pantalla -->
+<div class="screen" id="screen2">
+    <h1 class="animate-text" style="animation-duration:2s;">Génesis Hub V2</h1>
+    <button class="button" onclick="nextScreen(3)">Create the Key</button>
+    <button class="button" onclick="window.open('','_blank')">Tutorial</button>
 </div>
 
-<!-- SECCIÓN 3 -->
-<div class="section hidden" id="section3">
-    <h1>Your Key</h1>
-    <input type="text" id="keyBox" readonly>
-    <button id="copyKeyBtn">Copy</button>
+<!-- Tercera pantalla -->
+<div class="screen" id="screen3">
+    <h1 class="animate-text">Your Key</h1>
+    <div id="key-box">XXXX-XXXX-XXXX-XXXX</div>
+    <button class="button" id="copy-btn" onclick="copyKey()">Copy</button>
 </div>
 
 <script>
-    // Manejo de secciones
-    const section1 = document.getElementById("section1");
-    const section2 = document.getElementById("section2");
-    const section3 = document.getElementById("section3");
-    const createBtn = document.getElementById("createKeyBtn");
-    const tutorialBtn = document.getElementById("tutorialBtn");
-    const copyBtn = document.getElementById("copyKeyBtn");
-    const keyBox = document.getElementById("keyBox");
+// Pantallas
+function nextScreen(num){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen'+num).classList.add('active');
+}
 
-    // Primer pantalla: se oculta tras 10s
-    setTimeout(() => {
-        section1.classList.add("hidden");
-        section2.classList.remove("hidden");
-        animateSection2();
-    }, 10000);
+// Copiar key
+function copyKey(){
+    const keyBox = document.getElementById('key-box');
+    navigator.clipboard.writeText(keyBox.textContent);
+    alert('Key copied!');
+}
 
-    // Tutorial button
-    tutorialBtn.addEventListener("click", () => {
-        window.open("YOUR_YOUTUBE_TUTORIAL_LINK", "_blank");
-    });
-
-    // Crear Key
-    createBtn.addEventListener("click", async () => {
-        try {
-            const res = await fetch("/generar");
-            const data = await res.json();
-            keyBox.value = data.k;
-            section2.classList.add("hidden");
-            section3.classList.remove("hidden");
-            animateSection3();
-        } catch (err) {
-            alert("Error generating key.");
-            console.error(err);
-        }
-    });
-
-    // Copiar key
-    copyBtn.addEventListener("click", () => {
-        if(keyBox.value){
-            navigator.clipboard.writeText(keyBox.value)
-            .then(() => alert("Key copied!"))
-            .catch(err => console.error("Failed to copy key:", err));
-        }
-    });
-
-    // Animaciones para sección 2
-    function animateSection2(){
-        section2.style.transform = "translateY(-20px)";
-        section2.style.transition = "all 1s ease";
-        setTimeout(()=>{section2.style.transform="translateY(0)";}, 50);
+// Partículas
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+let particles=[];
+for(let i=0;i<120;i++){
+    particles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*2+1, d:Math.random()*1});
+}
+function drawParticles(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="white";
+    ctx.beginPath();
+    for(let i=0;i<particles.length;i++){
+        let p=particles[i];
+        ctx.moveTo(p.x,p.y);
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2,true);
     }
-
-    // Animaciones para sección 3
-    function animateSection3(){
-        section3.style.opacity=0;
-        section3.style.transition="opacity 1.5s ease";
-        setTimeout(()=>{section3.style.opacity=1;},50);
+    ctx.fill();
+    updateParticles();
+}
+let angle=0;
+function updateParticles(){
+    angle+=0.01;
+    for(let i=0;i<particles.length;i++){
+        let p=particles[i];
+        p.y+=Math.cos(angle+p.d)+1+p.r/2;
+        p.x+=Math.sin(angle);
+        if(p.y>canvas.height){p.y=0;p.x=Math.random()*canvas.width;}
     }
-
-    // PARTICULAS sección 1
-    const canvas = document.createElement("canvas");
-    document.body.appendChild(canvas);
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    let particles = [];
-    for(let i=0;i<150;i++){
-        particles.push({
-            x:Math.random()*canvas.width,
-            y:Math.random()*canvas.height,
-            r:Math.random()*2+1,
-            dy:Math.random()*0.5+0.2
-        });
-    }
-    function drawParticles(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle="white";
-        particles.forEach(p=>{
-            ctx.beginPath();
-            ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-            ctx.fill();
-            p.y += p.dy;
-            if(p.y>canvas.height) p.y=0;
-        });
-        requestAnimationFrame(drawParticles);
-    }
-    drawParticles();
-
+    requestAnimationFrame(drawParticles);
+}
+drawParticles();
 </script>
+
 </body>
 </html>
