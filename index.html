@@ -5,129 +5,148 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Génesis Hub V2</title>
 <style>
-  body {
-    margin: 0;
-    background: linear-gradient(to bottom, #000000, #0d0d0d);
-    color: #fff;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
-  }
-  .section {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    text-align: center;
-  }
-  #particles {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    top: 0;
-    left: 0;
-  }
-  h1 {
-    font-size: 4em;
-    margin: 0;
-    animation: fall 3s ease forwards;
-  }
-  h3 {
-    font-size: 1.5em;
-    margin-top: 10px;
-  }
-  .button {
-    margin: 20px;
-    padding: 15px 30px;
-    font-size: 1.2em;
-    color: #fff;
-    background: linear-gradient(45deg, #ff0055, #ff5500);
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: transform 0.3s, background 0.3s;
-  }
-  .button:hover {
-    transform: scale(1.1);
-    background: linear-gradient(45deg, #ff55aa, #ffaa00);
-  }
-  .key-box {
-    margin-top: 20px;
-    padding: 10px;
-    background: #111;
-    border-radius: 10px;
-    width: 250px;
-    word-break: break-all;
-    cursor: pointer;
-  }
-  @keyframes fall {
-    0% { transform: translateY(-300px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
-  }
+    /* Estilos generales */
+    body, html {margin:0; padding:0; font-family: Arial, sans-serif; overflow-x:hidden; background:#0a0a0a; color:#fff;}
+    .section {width:100%; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; text-align:center;}
+    .hidden {display:none;}
+    h1 {font-size:4em; margin:0;}
+    h3 {font-size:1.2em; margin:10px 0;}
+    button {padding:15px 30px; font-size:1.2em; cursor:pointer; border:none; border-radius:10px; transition: all 0.3s ease;}
+    button:hover {transform:scale(1.1);}
+    #keyBox {padding:10px; width:300px; text-align:center; border-radius:5px; border:none; font-size:1.2em;}
+    #copyKeyBtn {margin-top:10px; background: #28a745; color:#fff;}
+    #createKeyBtn {background: linear-gradient(45deg, #ff416c, #ff4b2b); color:#fff; margin-bottom:15px;}
+    #tutorialBtn {background: linear-gradient(45deg, #1e90ff, #00bfff); color:#fff;}
+
+    /* Logos de Discord */
+    .discord-logos {position:absolute; bottom:20px; display:flex; gap:20px; justify-content:center; width:100%;}
+    .discord-logos img {width:40px; height:40px; margin-right:10px;}
+    .discord-user {font-size:1em; color:#fff; display:flex; align-items:center;}
+
+    /* Animaciones de partículas primera sección */
+    canvas {position:absolute; top:0; left:0; z-index:-1;}
 </style>
 </head>
 <body>
 
-<div id="particles"></div>
-
+<!-- SECCIÓN 1 -->
 <div class="section" id="section1">
-  <h1>Génesis Hub V2</h1>
-  <h3>Made by Jesús and Alejandro</h3>
-  <div>
-    <img src="discord.png" width="40" style="margin: 5px;"> jesusms13
-    <img src="discord.png" width="40" style="margin: 5px;"> scripman83
-  </div>
+    <h1>Génesis Hub V2</h1>
+    <h3>Made by Jesús and Alejandro</h3>
+    <div class="discord-logos">
+        <div class="discord-user"><img src="discord-logo1.png" alt="Discord"> jesusms13</div>
+        <div class="discord-user"><img src="discord-logo2.png" alt="Discord"> scripman83</div>
+    </div>
 </div>
 
-<div class="section" id="section2" style="display:none">
-  <h1>Génesis Hub V2</h1>
-  <button class="button" id="createKey">Create the Key</button>
-  <button class="button" id="tutorial">Tutorial</button>
-  <p>Thank you for choosing us!</p>
+<!-- SECCIÓN 2 -->
+<div class="section hidden" id="section2">
+    <h1>Create Your Key</h1>
+    <button id="createKeyBtn">Create Key</button>
+    <button id="tutorialBtn">Tutorial</button>
+    <h3>Thank you for choosing us</h3>
+    <div class="discord-logos">
+        <div class="discord-user"><img src="discord-logo1.png" alt="Discord"> jesusms13</div>
+        <div class="discord-user"><img src="discord-logo2.png" alt="Discord"> scripman83</div>
+    </div>
 </div>
 
-<div class="section" id="section3" style="display:none">
-  <h1>Your Key</h1>
-  <div class="key-box" id="keyBox">XXXXXXXXXXXXXX</div>
+<!-- SECCIÓN 3 -->
+<div class="section hidden" id="section3">
+    <h1>Your Key</h1>
+    <input type="text" id="keyBox" readonly>
+    <button id="copyKeyBtn">Copy</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
 <script>
-  particlesJS("particles", {
-    "particles": {
-      "number": {"value": 80},
-      "color": {"value": "#ffffff"},
-      "shape": {"type": "circle"},
-      "opacity": {"value": 0.7},
-      "size": {"value": 3},
-      "line_linked": {"enable": false},
-      "move": {"enable": true, "speed": 2}
+    // Manejo de secciones
+    const section1 = document.getElementById("section1");
+    const section2 = document.getElementById("section2");
+    const section3 = document.getElementById("section3");
+    const createBtn = document.getElementById("createKeyBtn");
+    const tutorialBtn = document.getElementById("tutorialBtn");
+    const copyBtn = document.getElementById("copyKeyBtn");
+    const keyBox = document.getElementById("keyBox");
+
+    // Primer pantalla: se oculta tras 10s
+    setTimeout(() => {
+        section1.classList.add("hidden");
+        section2.classList.remove("hidden");
+        animateSection2();
+    }, 10000);
+
+    // Tutorial button
+    tutorialBtn.addEventListener("click", () => {
+        window.open("YOUR_YOUTUBE_TUTORIAL_LINK", "_blank");
+    });
+
+    // Crear Key
+    createBtn.addEventListener("click", async () => {
+        try {
+            const res = await fetch("/generar");
+            const data = await res.json();
+            keyBox.value = data.k;
+            section2.classList.add("hidden");
+            section3.classList.remove("hidden");
+            animateSection3();
+        } catch (err) {
+            alert("Error generating key.");
+            console.error(err);
+        }
+    });
+
+    // Copiar key
+    copyBtn.addEventListener("click", () => {
+        if(keyBox.value){
+            navigator.clipboard.writeText(keyBox.value)
+            .then(() => alert("Key copied!"))
+            .catch(err => console.error("Failed to copy key:", err));
+        }
+    });
+
+    // Animaciones para sección 2
+    function animateSection2(){
+        section2.style.transform = "translateY(-20px)";
+        section2.style.transition = "all 1s ease";
+        setTimeout(()=>{section2.style.transform="translateY(0)";}, 50);
     }
-  });
 
-  setTimeout(() => {
-    document.getElementById('section1').style.display = 'none';
-    document.getElementById('section2').style.display = 'flex';
-  }, 10000);
+    // Animaciones para sección 3
+    function animateSection3(){
+        section3.style.opacity=0;
+        section3.style.transition="opacity 1.5s ease";
+        setTimeout(()=>{section3.style.opacity=1;},50);
+    }
 
-  document.getElementById('createKey').onclick = async function() {
-    const res = await fetch('/generar');
-    const data = await res.json();
-    document.getElementById('keyBox').textContent = data.k;
-    document.getElementById('section2').style.display = 'none';
-    document.getElementById('section3').style.display = 'flex';
-  }
+    // PARTICULAS sección 1
+    const canvas = document.createElement("canvas");
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for(let i=0;i<150;i++){
+        particles.push({
+            x:Math.random()*canvas.width,
+            y:Math.random()*canvas.height,
+            r:Math.random()*2+1,
+            dy:Math.random()*0.5+0.2
+        });
+    }
+    function drawParticles(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle="white";
+        particles.forEach(p=>{
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+            ctx.fill();
+            p.y += p.dy;
+            if(p.y>canvas.height) p.y=0;
+        });
+        requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
 
-  document.getElementById('tutorial').onclick = function() {
-    window.open("#", "_blank");
-  }
-
-  document.getElementById('keyBox').onclick = function() {
-    navigator.clipboard.writeText(this.textContent);
-    alert("Key copied!");
-  }
 </script>
-
 </body>
 </html>
