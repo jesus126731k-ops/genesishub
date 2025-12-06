@@ -133,9 +133,6 @@ def admin(secret):
     })
 
 if __name__ == "__main__":
-    print("=" * 50)
     print("Genesis Hub V2 - Key Generator")
     print("Server: http://0.0.0.0:3000")
-    print("Admin: http://localhost:3000/admin/G3N3SIS_HUB_2025")
-    print("=" * 50)
-    app.run(host="0.0.0.0", port=3000, debug=True)
+    app.run(host="0.0.0.0", port=3000, debug=False)
