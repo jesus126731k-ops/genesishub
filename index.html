@@ -3,259 +3,130 @@
 <head>
 <meta charset="UTF-8">
 <title>Genesis Hub V2</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,Helvetica,sans-serif;
-}
 body{
-    background:#05060b;
-    overflow:hidden;
-    color:white;
-}
-
-.particle{
-    position:fixed;
-    top:-10px;
-    width:2px;
-    height:2px;
-    background:white;
-    animation:fall linear infinite;
-    opacity:.8;
-}
-@keyframes fall{
-    from{transform:translateY(0)}
-    to{transform:translateY(110vh)}
+margin:0;
+background:#050505;
+font-family:Arial;
+color:white;
+overflow:hidden;
 }
 
 .section{
-    width:100vw;
-    height:100vh;
-    position:absolute;
-    top:0;
-    left:0;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    transition:opacity 1s;
+width:100%;
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+position:absolute;
+top:0;
+left:0;
+transition:1s;
 }
 
-#splash{
-    background:radial-gradient(circle at top,#0b1020,#02020a);
-    z-index:3;
+/* SECTION 1 */
+#s1{z-index:3;background:black;}
+#title{
+font-size:4rem;
+animation:fall 1.2s ease;
+}
+@keyframes fall{
+from{transform:translateY(-200px);opacity:0;}
+to{transform:translateY(0);opacity:1;}
 }
 
-#main{
-    display:none;
-    background:linear-gradient(180deg,#05060b,#0b1020);
-    z-index:2;
+/* SECTION 2 */
+#s2{z-index:2;display:none;}
+button{
+padding:15px 40px;
+font-size:18px;
+border:none;
+border-radius:10px;
+background:linear-gradient(45deg,#ff3c00,#ffae00);
+color:white;
+cursor:pointer;
+margin:10px;
 }
 
-#keypage{
-    display:none;
-    background:linear-gradient(180deg,#02020a,#070c1a);
-    z-index:1;
-}
-
-.title{
-    font-size:54px;
-    font-weight:900;
-    letter-spacing:3px;
-    animation:drop 1.5s ease;
-}
-@keyframes drop{
-    from{transform:translateY(-200px);opacity:0}
-    to{transform:translateY(0);opacity:1}
-}
-
-.subtitle{
-    margin-top:15px;
-    font-size:18px;
-    opacity:.8;
-    animation:fade 2s ease;
-}
-
-@keyframes fade{
-    from{opacity:0}
-    to{opacity:.8}
-}
-
-.btn{
-    margin-top:25px;
-    padding:16px 35px;
-    border-radius:50px;
-    border:none;
-    cursor:pointer;
-    font-size:16px;
-    font-weight:700;
-    background:linear-gradient(135deg,#4e00ff,#00eaff);
-    color:#000;
-    transition:.25s;
-}
-.btn:hover{
-    transform:scale(1.07);
-    box-shadow:0 0 20px #00eaff;
-}
-
-.tutorial{
-    background:linear-gradient(135deg,#ff006a,#ffb300);
+/* SECTION 3 */
+#s3{z-index:1;display:none;}
+input{
+width:280px;
+text-align:center;
+padding:10px;
+font-size:18px;
+border-radius:6px;
+border:none;
 }
 
 .footer{
-    position:absolute;
-    bottom:25px;
-    display:flex;
-    gap:40px;
-    font-size:14px;
-    opacity:.85;
-}
-
-.discord{
-    display:flex;
-    align-items:center;
-    gap:8px;
-}
-.discord img{
-    width:18px;
-    height:18px;
-}
-
-.keybox{
-    margin-top:30px;
-    background:#000;
-    padding:20px 30px;
-    border-radius:12px;
-    font-size:18px;
-    letter-spacing:2px;
-    box-shadow:0 0 20px #00eaff;
-}
-
-.copy{
-    margin-top:12px;
-    cursor:pointer;
-    opacity:.8;
-    font-size:14px;
-}
-.copy:hover{opacity:1}
-
-.block{
-    position:fixed;
-    inset:0;
-    background:#000;
-    color:white;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    z-index:99;
+position:absolute;
+bottom:20px;
+font-size:13px;
+opacity:0.8;
 }
 </style>
 </head>
-
 <body>
 
-<div id="block" class="block" style="display:none;">
-    <h1>Access Denied</h1>
-    <p>You must complete the verification first.</p>
+<!-- SECTION 1 -->
+<div class="section" id="s1">
+<h1 id="title">Genesis Hub V2</h1>
+<p>Made by Jesús and Alejandro</p>
+<div class="footer">jesusms13 | scripman83</div>
 </div>
 
-<script>
-const allowed = "link-hub.net";
-if(document.referrer.toLowerCase().includes(allowed) === false){
-    document.getElementById("block").style.display="flex";
-}
-</script>
-
-<script>
-for(let i=0;i<120;i++){
-    let p=document.createElement("div");
-    p.className="particle";
-    p.style.left=Math.random()*100+"vw";
-    p.style.animationDuration=(Math.random()*6+4)+"s";
-    p.style.opacity=Math.random();
-    document.body.appendChild(p);
-}
-</script>
-
-<div id="splash" class="section">
-    <div class="title">GENESIS HUB V2</div>
-    <div class="subtitle">Welcome</div>
-
-    <div class="footer">
-        <div class="discord">
-            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111370.png">
-            <span>jesusms13</span>
-        </div>
-        <div class="discord">
-            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111370.png">
-            <span>scripman83</span>
-        </div>
-    </div>
+<!-- SECTION 2 -->
+<div class="section" id="s2">
+<h1>Genesis Hub V2</h1>
+<button onclick="getKey()">Create the Key</button>
+<button onclick="openTutorial()">Key Tutorial</button>
+<p>Thank you for choosing us</p>
 </div>
 
-<div id="main" class="section">
-    <div class="title">GENESIS HUB V2</div>
-
-    <button class="btn" onclick="toKey()">Create The Key</button>
-
-    <button class="btn tutorial" onclick="openTutorial()">Key Tutorial</button>
-
-    <div class="subtitle" style="margin-top:30px;">
-        Thank you very much for choosing us.
-    </div>
-</div>
-
-<div id="keypage" class="section">
-    <div class="title">YOUR KEY</div>
-
-    <div class="keybox" id="keyBox">-----</div>
-    <div class="copy" onclick="copyKey()">Copy to clipboard</div>
+<!-- SECTION 3 -->
+<div class="section" id="s3">
+<h1>Your Key</h1>
+<input id="keyBox" readonly>
+<br>
+<button onclick="copyKey()">Copy</button>
 </div>
 
 <script>
 setTimeout(()=>{
-    document.getElementById("splash").style.opacity="0";
-    setTimeout(()=>{
-        document.getElementById("splash").style.display="none";
-        document.getElementById("main").style.display="flex";
-    },1000);
-},10000);
+document.getElementById("s1").style.display="none";
+document.getElementById("s2").style.display="flex";
+},3000);
 
-function toKey(){
-    document.getElementById("main").style.display="none";
-    document.getElementById("keypage").style.display="flex";
-    generateKey();
+function getKey(){
+fetch("/generate_key")
+.then(r=>r.json())
+.then(d=>{
+if(d.key){
+document.getElementById("s2").style.display="none";
+document.getElementById("s3").style.display="flex";
+document.getElementById("keyBox").value=d.key;
+}else{
+alert(d.error);
 }
-
-function openTutorial(){
-    window.open("#","_blank"); 
-}
-
-function generateKey(){
-    fetch("/generar")
-    .then(r=>r.json())
-    .then(d=>{
-        if(d.key){
-            document.getElementById("keyBox").innerText=d.key;
-            navigator.clipboard.writeText(d.key);
-        }else{
-            document.getElementById("keyBox").innerText="ERROR";
-        }
-    });
+});
 }
 
 function copyKey(){
-    let k=document.getElementById("keyBox").innerText;
-    navigator.clipboard.writeText(k);
+let k=document.getElementById("keyBox");
+k.select();
+k.setSelectionRange(0,99999);
+document.execCommand("copy");
+alert("Key copied");
+}
+
+function openTutorial(){
+window.open("https://youtube.com","_blank");
 }
 </script>
 
 </body>
 </html>
+  
