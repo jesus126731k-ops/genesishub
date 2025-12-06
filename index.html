@@ -2,85 +2,131 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Genesis Hub V2</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<title>Génesis Hub V2</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;font-family:Roboto,sans-serif;background:#000;color:#fff;overflow:hidden}
-#particles-js{position:absolute;width:100%;height:100%;background:linear-gradient(135deg,#050505,#0c1020);z-index:-1}
-.section{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:1s}
-.hidden{opacity:0;pointer-events:none;transform:translateY(50px)}
-.visible{opacity:1;pointer-events:auto;transform:translateY(0)}
-.title{font-size:4em;font-weight:700;margin-bottom:10px;animation:drop 1s}
-.subtitle{font-size:1.5em;color:#aaa;margin-bottom:40px}
-@keyframes drop{0%{transform:translateY(-200px);opacity:0}100%{transform:translateY(0);opacity:1}}
-.btn{padding:15px 35px;margin:15px;font-size:1.2em;font-weight:bold;border:none;border-radius:10px;cursor:pointer;background:linear-gradient(90deg,#ff7a18,#af002d);color:#fff;transition:.3s}
-.btn:hover{transform:scale(1.1)}
-.discord-container{display:flex;gap:25px;margin-top:40px}
-.discord-item{display:flex;align-items:center;gap:10px;font-weight:bold}
-.discord-item img{width:32px;height:32px}
-.key-box{margin-top:20px;display:flex;gap:10px}
-.key-input{padding:10px;font-size:1em;border-radius:5px;border:none;width:260px;text-align:center}
-.copy-btn{padding:10px 15px;font-weight:bold;border-radius:5px;border:none;cursor:pointer;background:#28a745;color:#fff}
-.copy-btn:hover{background:#1f7e36}
+  body {
+    margin: 0;
+    background: linear-gradient(to bottom, #000000, #0d0d0d);
+    color: #fff;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+  }
+  .section {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+  }
+  #particles {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    top: 0;
+    left: 0;
+  }
+  h1 {
+    font-size: 4em;
+    margin: 0;
+    animation: fall 3s ease forwards;
+  }
+  h3 {
+    font-size: 1.5em;
+    margin-top: 10px;
+  }
+  .button {
+    margin: 20px;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    color: #fff;
+    background: linear-gradient(45deg, #ff0055, #ff5500);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.3s, background 0.3s;
+  }
+  .button:hover {
+    transform: scale(1.1);
+    background: linear-gradient(45deg, #ff55aa, #ffaa00);
+  }
+  .key-box {
+    margin-top: 20px;
+    padding: 10px;
+    background: #111;
+    border-radius: 10px;
+    width: 250px;
+    word-break: break-all;
+    cursor: pointer;
+  }
+  @keyframes fall {
+    0% { transform: translateY(-300px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
 </style>
 </head>
 <body>
 
-<div id="particles-js"></div>
+<div id="particles"></div>
 
-<div id="section1" class="section visible">
-<div class="title">Genesis Hub V2</div>
-<div class="subtitle">Made by Jesús and Alejandro</div>
-<div class="discord-container">
-<div class="discord-item"><img src="https://cdn.iconscout.com/icon/free/png-256/discord-3-569463.png">jesusms13</div>
-<div class="discord-item"><img src="https://cdn.iconscout.com/icon/free/png-256/discord-3-569463.png">scripman83</div>
-</div>
-</div>
-
-<div id="section2" class="section hidden">
-<div class="title">Genesis Hub V2</div>
-<button class="btn" id="createKeyBtn">Create the Key</button>
-<button class="btn" id="tutorialBtn">Tutorial</button>
-<div style="margin-top:20px;font-size:.9em;color:#ccc">Thank you very much for choosing us</div>
+<div class="section" id="section1">
+  <h1>Génesis Hub V2</h1>
+  <h3>Made by Jesús and Alejandro</h3>
+  <div>
+    <img src="discord.png" width="40" style="margin: 5px;"> jesusms13
+    <img src="discord.png" width="40" style="margin: 5px;"> scripman83
+  </div>
 </div>
 
-<div id="section3" class="section hidden">
-<div class="title">Your Key</div>
-<div class="key-box">
-<input type="text" id="keyInput" class="key-input" readonly>
-<button class="copy-btn" id="copyKeyBtn">Copy</button>
-</div>
+<div class="section" id="section2" style="display:none">
+  <h1>Génesis Hub V2</h1>
+  <button class="button" id="createKey">Create the Key</button>
+  <button class="button" id="tutorial">Tutorial</button>
+  <p>Thank you for choosing us!</p>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+<div class="section" id="section3" style="display:none">
+  <h1>Your Key</h1>
+  <div class="key-box" id="keyBox">XXXXXXXXXXXXXX</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
 <script>
-particlesJS("particles-js",{particles:{number:{value:100},color:{value:"#ffffff"},shape:{type:"circle"},opacity:{value:.8},size:{value:2},line_linked:{enable:false},move:{enable:true,speed:2}}});
+  particlesJS("particles", {
+    "particles": {
+      "number": {"value": 80},
+      "color": {"value": "#ffffff"},
+      "shape": {"type": "circle"},
+      "opacity": {"value": 0.7},
+      "size": {"value": 3},
+      "line_linked": {"enable": false},
+      "move": {"enable": true, "speed": 2}
+    }
+  });
 
-const s1=document.getElementById("section1");
-const s2=document.getElementById("section2");
-const s3=document.getElementById("section3");
+  setTimeout(() => {
+    document.getElementById('section1').style.display = 'none';
+    document.getElementById('section2').style.display = 'flex';
+  }, 10000);
 
-setTimeout(()=>{s1.classList.replace("visible","hidden");s2.classList.replace("hidden","visible")},10000);
+  document.getElementById('createKey').onclick = async function() {
+    const res = await fetch('/generar');
+    const data = await res.json();
+    document.getElementById('keyBox').textContent = data.k;
+    document.getElementById('section2').style.display = 'none';
+    document.getElementById('section3').style.display = 'flex';
+  }
 
-document.getElementById("createKeyBtn").onclick=()=>{
-fetch("/generar").then(r=>r.json()).then(d=>{
-document.getElementById("keyInput").value=d.k;
-s2.classList.replace("visible","hidden");
-s3.classList.replace("hidden","visible");
-});
-};
+  document.getElementById('tutorial').onclick = function() {
+    window.open("#", "_blank");
+  }
 
-document.getElementById("copyKeyBtn").onclick=()=>{
-let k=document.getElementById("keyInput");
-k.select();k.setSelectionRange(0,99999);
-document.execCommand("copy");
-};
-
-document.getElementById("tutorialBtn").onclick=()=>{
-window.open("YOUR_YOUTUBE_LINK_HERE","_blank");
-};
+  document.getElementById('keyBox').onclick = function() {
+    navigator.clipboard.writeText(this.textContent);
+    alert("Key copied!");
+  }
 </script>
 
 </body>

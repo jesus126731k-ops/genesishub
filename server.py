@@ -4,9 +4,8 @@ import random, string, time, json, os
 app = Flask(__name__)
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "keys.json")
-COOLDOWN = 86400
+COOLDOWN = 86400  # 24 horas
 SECRET = "G3N3SIS_HUB_2025"
-LINKVERTISE_DOMAIN = "https://link-hub.net/1457789/3pNxakfWICZQ"
 
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
@@ -18,55 +17,49 @@ def generate_key():
 def clean_expired():
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
-    now = time.time()
-    data = {ip: v for ip, v in data.items() if now < v["expire"]}
+    current_time = time.time()
+    new_data = {ip: info for ip, info in data.items() if current_time < info["e"]}
     with open(DATA_FILE, "w") as f:
-        json.dump(data, f)
+        json.dump(new_data, f)
 
 @app.route("/")
 @app.route("/genesis")
-def home():
+def index():
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
 
-@app.route("/generate")
+@app.route("/generar")
 def generate():
     clean_expired()
     ip = request.remote_addr
-    referer = request.headers.get("Referer", "")
-
-    if LINKVERTISE_DOMAIN not in referer:
-        return jsonify({"error": "Access denied, verify Linkvertise first"}), 403
-
-    now = time.time()
+    current_time = time.time()
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
     if ip in data:
-        remaining = int((data[ip]["expire"] - now) / 3600)
-        return jsonify({"error": f"Key already generated. Try again in {remaining}h"}), 429
-
+        remaining_hours = int((data[ip]["e"] - current_time) / 3600)
+        return jsonify({"e": f"{remaining_hours}h"})
     key = generate_key()
     data[ip] = {
-        "key": key,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "expire": now + COOLDOWN,
-        "ip": ip
+        "k": key,
+        "t": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "e": current_time + COOLDOWN,
+        "i": ip
     }
     with open(DATA_FILE, "w") as f:
         json.dump(data, f)
-    return jsonify({"key": key, "timestamp": data[ip]["timestamp"]})
+    return jsonify({"k": key, "t": data[ip]["t"]})
 
-@app.route("/validate/<key>")
+@app.route("/validar/<key>")
 def validate(key):
     clean_expired()
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
-    for record in data.values():
-        if record["key"] == key and time.time() < record["expire"]:
+    for info in data.values():
+        if info["k"] == key and time.time() < info["e"]:
             return jsonify({"ok": True})
     return jsonify({"ok": False})
 
-@app.route("/admin/<secret>")
-def admin(secret):
+@app.route("/x/<secret>")
+def all_keys(secret):
     if secret != SECRET:
         abort(404)
     with open(DATA_FILE, "r") as f:
