@@ -1,0 +1,50 @@
+from flask import Flask, jsonify, send_from_directory
+import random
+import string
+import time
+import json
+import os
+
+app = Flask(__name__)
+
+DATA_FILE = "keys.json"
+
+if not os.path.exists(DATA_FILE):
+    with open(DATA_FILE, "w") as f:
+        json.dump({}, f)
+
+def generar_key():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+
+@app.route("/")
+def index():
+    return send_from_directory(".", "index.html")
+
+@app.route("/generar")
+def generar():
+    with open(DATA_FILE, "r") as f:
+        keys = json.load(f)
+
+    nueva_key = generar_key()
+    expiracion = time.time() + 86400  # 24 horas
+
+    keys[nueva_key] = expiracion
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(keys, f)
+
+    return jsonify({"key": nueva_key})
+
+@app.route("/validar/<key>")
+def validar(key):
+    with open(DATA_FILE, "r") as f:
+        keys = json.load(f)
+
+    if key in keys and time.time() < keys[key]:
+        return jsonify({"valida": True})
+    else:
+        return jsonify({"valida": False})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000)
+

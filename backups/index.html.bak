@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Keys</title>
+</head>
+<body>
+    <h1>Generar Key (24 horas)</h1>
+    <button onclick="generarKey()">Crear Key</button>
+    <p id="resultado"></p>
+
+    <script>
+        function generarKey() {
+            fetch("http://127.0.0.1:3000/generar")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("resultado").innerText =
+                    "Tu Key es: " + data.key;
+            })
+            .catch(err => {
+                document.getElementById("resultado").innerText =
+                    "Error al conectar con el servidor";
+            });
+        }
+    </script>
+</body>
+</html>
