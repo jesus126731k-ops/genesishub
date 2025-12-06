@@ -1,84 +1,141 @@
-from flask import Flask, jsonify, request, send_from_directory, abort
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 import os, json, time, random, string
 
 app = Flask(__name__)
+CORS(app)
 
-# Archivos y configuración
-DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "keys.json")
-COOLDOWN = 86400  # 24 horas en segundos
+DATA_FILE = "keys.json"
+COOLDOWN = 86400
 SECRET = "G3N3SIS_HUB_2025"
 
-# Crear archivo si no existe
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump({}, f)
 
-# Generar key aleatoria
 def generate_key():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=24))
+    parts = []
+    for _ in range(4):
+        parts.append(''.join(random.choices(string.ascii_uppercase + string.digits, k=6)))
+    return '-'.join(parts)
 
-# Limpiar llaves expiradas
 def clean_keys():
-    with open(DATA_FILE, "r") as f:
-        data = json.load(f)
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+    except:
+        data = {}
+    
     current_time = time.time()
-    data = {ip: info for ip, info in data.items() if current_time < info["expires"]}
+    cleaned = {ip: info for ip, info in data.items() if current_time < info.get("expires", 0)}
+    
     with open(DATA_FILE, "w") as f:
-        json.dump(data, f)
+        json.dump(cleaned, f, indent=2)
+    
+    return len(data) - len(cleaned)
 
-# Servir página principal
 @app.route("/")
 @app.route("/genesis")
 def index():
-    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
+    return send_from_directory(".", "index.html")
 
-# Generar nueva key
-@app.route("/generate")
-def generate():
+@app.route("/<path:filename>")
+def static_files(filename):
+    return send_from_directory(".", filename)
+
+@app.route("/generate-key", methods=["POST"])
+def generate_key_endpoint():
     clean_keys()
+    
     ip = request.remote_addr
+    if request.headers.get('X-Forwarded-For'):
+        ip = request.headers.get('X-Forwarded-For').split(',')[0]
+    
     current_time = time.time()
-
-    with open(DATA_FILE, "r") as f:
-        data = json.load(f)
-
-    # Verificar cooldown
+    
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+    except:
+        data = {}
+    
     if ip in data:
-        remaining = int((data[ip]["expires"] - current_time) / 3600)
-        return jsonify({"error": f"Wait {remaining}h to generate another key"})
-
+        remaining = data[ip]["expires"] - current_time
+        if remaining > 0:
+            hours = int(remaining / 3600)
+            minutes = int((remaining % 3600) / 60)
+            seconds = int(remaining % 60)
+            
+            return jsonify({
+                "success": False,
+                "message": f"Wait {hours}h {minutes}m {seconds}s",
+                "time_remaining": remaining,
+                "error_code": "COOLDOWN"
+            }), 429
+    
     key = generate_key()
     data[ip] = {
         "key": key,
         "created": time.strftime("%Y-%m-%d %H:%M:%S"),
         "expires": current_time + COOLDOWN,
-        "ip": ip
+        "ip": ip,
+        "user_agent": request.headers.get('User-Agent', 'Unknown')
     }
-
+    
     with open(DATA_FILE, "w") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=2)
+    
+    return jsonify({
+        "success": True,
+        "key": key,
+        "created": data[ip]["created"],
+        "expires_in": COOLDOWN,
+        "message": "Key generated"
+    })
 
-    return jsonify({"key": key, "created": data[ip]["created"]})
-
-# Validar key
-@app.route("/validate/<key>")
+@app.route("/validate/<key>", methods=["GET"])
 def validate(key):
     clean_keys()
-    with open(DATA_FILE, "r") as f:
-        data = json.load(f)
-
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+    except:
+        data = {}
+    
+    current_time = time.time()
     for info in data.values():
-        if info["key"] == key and time.time() < info["expires"]:
-            return jsonify({"valid": True})
+        if info.get("key") == key and current_time < info.get("expires", 0):
+            return jsonify({"valid": True, "created": info.get("created")})
+    
     return jsonify({"valid": False})
 
-# Endpoint para ver todas las keys (solo con SECRET)
-@app.route("/keys/<secret>")
-def all_keys(secret):
+@app.route("/admin/<secret>", methods=["GET"])
+def admin(secret):
     if secret != SECRET:
-        abort(404)
-    with open(DATA_FILE, "r") as f:
-        return jsonify(json.load(f))
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    clean_keys()
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+    except:
+        data = {}
+    
+    current_time = time.time()
+    active = sum(1 for info in data.values() if current_time < info.get("expires", 0))
+    expired = len(data) - active
+    
+    return jsonify({
+        "total": len(data),
+        "active": active,
+        "expired": expired,
+        "keys": data
+    })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+    print("=" * 50)
+    print("Genesis Hub V2 - Key Generator")
+    print("Server: http://0.0.0.0:3000")
+    print("Admin: http://localhost:3000/admin/G3N3SIS_HUB_2025")
+    print("=" * 50)
+    app.run(host="0.0.0.0", port=3000, debug=True)
