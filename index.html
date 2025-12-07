@@ -126,24 +126,11 @@
             margin-top: 5px;
         }
         
-        .btn-newkey {
-            padding: 12px 35px;
-            font-size: 1.2rem;
-            background: linear-gradient(135deg, #00cc66, #00994d);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .key-expiry {
+            color: #ff6600;
+            font-size: 0.9rem;
+            margin-top: 5px;
             font-weight: bold;
-        }
-        
-        .btn-newkey:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 204, 102, 0.4);
         }
     </style>
 </head>
@@ -202,26 +189,23 @@
             <div class="key-display">
                 <div id="loadingKey" class="loading">
                     <div class="spinner"></div>
-                    <p class="loading-text">Checking for your key...</p>
+                    <p class="loading-text">Loading your key...</p>
                 </div>
                 
                 <div id="keyResult" style="display:none">
                     <div class="key-text" id="generatedKey">ABC12-XYZ34-PQR56</div>
                     
                     <div class="key-info" id="keyInfo">
-                        <i class="fas fa-clock"></i> Key expires in 24 hours
+                        <i class="fas fa-clock"></i> Loading expiry time...
                     </div>
                     
-                    <div class="key-status" id="keyStatus">
-                        <i class="fas fa-check-circle"></i> Key saved locally
+                    <div class="key-expiry" id="keyExpiry">
+                        <i class="fas fa-check-circle"></i> Valid for 24 hours
                     </div>
                     
                     <div class="key-actions">
                         <button class="btn-copy" id="copyKeyBtn">
                             <i class="fas fa-copy"></i> COPY KEY
-                        </button>
-                        <button class="btn-newkey" id="newKeyBtn">
-                            <i class="fas fa-sync-alt"></i> NEW KEY
                         </button>
                         <button class="btn-back" id="backToMenuBtn">
                             <i class="fas fa-arrow-left"></i> BACK
@@ -237,17 +221,17 @@
     <div id="linkvertiseModal" class="linkvertise-modal hidden">
         <div class="modal-content">
             <div class="modal-title">
-                <i class="fas fa-exclamation-triangle"></i> ACTION REQUIRED
+                <i class="fas fa-exclamation-triangle"></i> ONE-TIME VERIFICATION REQUIRED
             </div>
             <div class="modal-text">
-                You need to complete a Linkvertise verification to generate keys.<br>
-                This helps us maintain the service free for everyone.
+                Complete Linkvertise verification <strong>once</strong> to get permanent access.<br>
+                After this, you can generate keys anytime for 24 hours.
             </div>
             <a href="https://link-hub.net/1457789/3pNxakfWICZQ" target="_blank" class="linkvertise-btn" id="openLinkvertiseBtn">
-                <i class="fas fa-external-link-alt"></i> OPEN LINKVERTISE
+                <i class="fas fa-external-link-alt"></i> VERIFY NOW
             </a>
             <div class="modal-note">
-                After completion, you will be redirected back here automatically.
+                After completion, you will be redirected back automatically.
             </div>
             <button class="close-modal" id="closeModalBtn">
                 Cancel
@@ -256,20 +240,19 @@
     </div>
 
     <script>
-        // ========== CONFIGURACIÓN ==========
         const API_URL = window.location.origin;
         const SCREEN1_DURATION = 8000;
         const DISCORD_LINK = "https://discord.gg/your-discord";
         const TUTORIAL_LINK = "https://youtube.com/your-tutorial";
         const WEBSITE_URL = "https://genesishub-v2.onrender.com";
         
-        // Variables globales
         let particles = [];
         let animationId = null;
         let countdownInterval = null;
         let currentKeyData = null;
+        let hasLinkvertiseCompleted = false;
         
-        // ========== SISTEMA DE CLAVE PERSISTENTE ==========
+        // ========== SISTEMA MEJORADO ==========
         function saveKeyToStorage(keyData) {
             if (!keyData || !keyData.key) return false;
             
@@ -278,32 +261,19 @@
                 expires_at: keyData.expires_at,
                 saved_at: Date.now(),
                 time_left: keyData.time_left,
-                source: 'genesis_hub_v2'
+                user_id: keyData.user_id,
+                permanent_access: true
             };
             
-            localStorage.setItem('genesis_hub_key', JSON.stringify(saveData));
-            localStorage.setItem('last_genesis_key', keyData.key);
-            console.log('💾 Key saved:', keyData.key);
+            localStorage.setItem('genesis_hub_v2_data', JSON.stringify(saveData));
+            console.log('💾 Key saved to localStorage');
             return true;
         }
         
         function getSavedKey() {
             try {
-                const saved = localStorage.getItem('genesis_hub_key');
-                if (!saved) {
-                    // Intentar con backup
-                    const backupKey = localStorage.getItem('last_genesis_key');
-                    if (backupKey) {
-                        return {
-                            key: backupKey,
-                            expires_at: new Date(Date.now() + 86400000).toISOString(),
-                            time_left: { hours: 24, minutes: 0, seconds: 0 },
-                            is_valid: true,
-                            from_backup: true
-                        };
-                    }
-                    return null;
-                }
+                const saved = localStorage.getItem('genesis_hub_v2_data');
+                if (!saved) return null;
                 
                 const keyData = JSON.parse(saved);
                 const now = Date.now();
@@ -322,18 +292,37 @@
                             minutes: Math.floor((timeLeft % 3600) / 60),
                             seconds: timeLeft % 60
                         },
-                        is_valid: true
+                        is_valid: true,
+                        permanent_access: keyData.permanent_access || false
                     };
-                } else {
-                    // Eliminar clave expirada
-                    localStorage.removeItem('genesis_hub_key');
-                    localStorage.removeItem('last_genesis_key');
-                    return null;
                 }
             } catch (error) {
                 console.error('Error reading saved key:', error);
-                return null;
             }
+            return null;
+        }
+        
+        async function checkLinkvertiseStatus() {
+            try {
+                const response = await fetch(`${API_URL}/check-linkvertise`);
+                const data = await response.json();
+                
+                if (data.completed && data.permanent) {
+                    hasLinkvertiseCompleted = true;
+                    localStorage.setItem('genesis_linkvertise_completed', 'true');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Error checking linkvertise:', error);
+            }
+            
+            // Verificar en localStorage como respaldo
+            if (localStorage.getItem('genesis_linkvertise_completed') === 'true') {
+                hasLinkvertiseCompleted = true;
+                return true;
+            }
+            
+            return false;
         }
         
         function displaySavedKey() {
@@ -349,45 +338,31 @@
             const keyElement = document.getElementById('generatedKey');
             const resultDiv = document.getElementById('keyResult');
             const loading = document.getElementById('loadingKey');
-            const status = document.getElementById('statusMessage');
             const keyInfo = document.getElementById('keyInfo');
-            const keyStatus = document.getElementById('keyStatus');
+            const keyExpiry = document.getElementById('keyExpiry');
             
             if (!keyElement || !resultDiv || !loading) return;
             
-            // Mostrar clave
             keyElement.textContent = keyData.key;
             loading.style.display = 'none';
             resultDiv.style.display = 'block';
             
-            // Actualizar información
-            if (keyInfo) {
-                const hours = keyData.time_left.hours || Math.floor(keyData.time_left.total_seconds / 3600);
-                const minutes = keyData.time_left.minutes || Math.floor((keyData.time_left.total_seconds % 3600) / 60);
-                keyInfo.innerHTML = `<i class="fas fa-clock"></i> Key expires in ${hours}h ${minutes}m`;
+            if (keyInfo && keyData.time_left) {
+                const hours = keyData.time_left.hours;
+                const minutes = keyData.time_left.minutes;
+                keyInfo.innerHTML = `<i class="fas fa-clock"></i> Expires in ${hours}h ${minutes}m`;
             }
             
-            if (keyStatus) {
-                if (keyData.from_backup) {
-                    keyStatus.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Restored from backup`;
-                    keyStatus.style.color = '#ff9900';
-                } else {
-                    keyStatus.innerHTML = `<i class="fas fa-check-circle"></i> Saved locally`;
-                    keyStatus.style.color = '#00ff00';
-                }
+            if (keyExpiry) {
+                keyExpiry.innerHTML = `<i class="fas fa-infinity"></i> Unlimited Roblox uses for 24h`;
+                keyExpiry.style.color = '#00ff00';
             }
             
-            // Actualizar estado
-            if (status) {
-                status.innerHTML = `<i class="fas fa-check"></i> Key loaded from storage`;
-                status.style.color = '#00ff00';
-            }
-            
-            // Guardar como clave actual
             currentKeyData = keyData;
             
-            // Iniciar cuenta regresiva
-            startCountdown(keyData.time_left.total_seconds);
+            if (keyData.time_left && keyData.time_left.total_seconds) {
+                startCountdown(keyData.time_left.total_seconds);
+            }
         }
         
         function startCountdown(seconds) {
@@ -409,9 +384,7 @@
                     keyInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Key expired`;
                     keyInfo.style.color = '#ff3300';
                     
-                    // Eliminar clave expirada
-                    localStorage.removeItem('genesis_hub_key');
-                    localStorage.removeItem('last_genesis_key');
+                    localStorage.removeItem('genesis_hub_v2_data');
                 } else {
                     const hours = Math.floor(timeLeft / 3600);
                     const minutes = Math.floor((timeLeft % 3600) / 60);
@@ -428,9 +401,16 @@
             initParticles();
             setupEvents();
             
-            // Cargar clave guardada si existe
+            // Verificar estado de Linkvertise
+            checkLinkvertiseStatus().then(completed => {
+                if (completed) {
+                    console.log('✅ Linkvertise completed (permanent access)');
+                }
+            });
+            
+            // Cargar clave guardada
             if (displaySavedKey()) {
-                console.log('🔑 Loaded key from localStorage');
+                console.log('🔑 Loaded existing key');
             }
             
             setTimeout(() => {
@@ -489,64 +469,50 @@
         }
         
         function setupEvents() {
-            // Botón CREATE YOUR KEY
             document.getElementById('createKeyBtn').addEventListener('click', async () => {
                 changeScreen(3);
                 
-                // Verificar Linkvertise
                 const status = document.getElementById('statusMessage');
-                status.textContent = 'Checking verification...';
+                status.textContent = 'Loading...';
                 status.style.color = '#ff6600';
                 
-                try {
-                    const response = await fetch(`${API_URL}/check-linkvertise`);
-                    const data = await response.json();
-                    
-                    if (data.completed) {
-                        // Verificar si ya tiene clave
-                        await checkExistingKey();
+                // VERIFICAR SI YA TIENE ACCESO PERMANENTE
+                if (hasLinkvertiseCompleted) {
+                    await loadOrGenerateKey();
+                } else {
+                    // Verificar en servidor por si acaso
+                    const completed = await checkLinkvertiseStatus();
+                    if (completed) {
+                        await loadOrGenerateKey();
                     } else {
                         showLinkvertiseModal();
                     }
-                } catch (error) {
-                    console.error('Error:', error);
-                    status.textContent = 'Connection error. Please try again.';
-                    status.style.color = '#ff3300';
                 }
             });
             
-            // Botón TUTORIAL
             document.getElementById('tutorialBtn').addEventListener('click', () => {
                 window.open(TUTORIAL_LINK, '_blank');
             });
             
-            // Botón DISCORD
             document.getElementById('discordBtn').addEventListener('click', () => {
                 window.open(DISCORD_LINK, '_blank');
             });
             
-            // Footer link
             document.getElementById('footerLink').addEventListener('click', () => {
                 window.open(WEBSITE_URL, '_blank');
             });
             
-            // Botón COPY KEY
             document.getElementById('copyKeyBtn').addEventListener('click', copyKey);
             
-            // Botón NEW KEY
-            document.getElementById('newKeyBtn').addEventListener('click', generateNewKey);
-            
-            // Botón BACK
             document.getElementById('backToMenuBtn').addEventListener('click', () => {
                 changeScreen(2);
             });
             
-            // Modal Linkvertise
             document.getElementById('openLinkvertiseBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 window.open(this.href, '_blank');
                 
-                // Verificar periódicamente
+                // Verificar cada 3 segundos
                 const checkInterval = setInterval(async () => {
                     try {
                         const response = await fetch(`${API_URL}/check-linkvertise`);
@@ -554,8 +520,10 @@
                         
                         if (data.completed) {
                             clearInterval(checkInterval);
+                            hasLinkvertiseCompleted = true;
+                            localStorage.setItem('genesis_linkvertise_completed', 'true');
                             hideLinkvertiseModal();
-                            checkExistingKey();
+                            await loadOrGenerateKey();
                         }
                     } catch (error) {
                         console.error('Error:', error);
@@ -588,23 +556,23 @@
             }
         }
         
-        async function checkExistingKey() {
+        async function loadOrGenerateKey() {
             const loading = document.getElementById('loadingKey');
             const resultDiv = document.getElementById('keyResult');
             const status = document.getElementById('statusMessage');
             
             loading.style.display = 'flex';
             resultDiv.style.display = 'none';
-            status.textContent = 'Checking existing key...';
+            status.textContent = 'Checking your key...';
             status.style.color = '#ff6600';
             
             try {
-                // Primero verificar en servidor
+                // Intentar obtener clave existente del servidor
                 const response = await fetch(`${API_URL}/get-existing-key`);
                 const data = await response.json();
                 
                 if (data.success && !data.expired) {
-                    // Usar clave del servidor
+                    // Usar clave existente
                     const keyData = {
                         key: data.key,
                         expires_at: data.expires_at,
@@ -617,13 +585,17 @@
                     
                     status.innerHTML = `<i class="fas fa-check"></i> ${data.message}`;
                     status.style.color = '#00ff00';
+                } else if (data.expired) {
+                    // Clave expirada, generar nueva
+                    await generateNewKey();
                 } else {
-                    // Generar nueva clave
+                    // No tiene clave, generar nueva
                     await generateNewKey();
                 }
             } catch (error) {
-                console.error('Error checking existing key:', error);
-                await generateNewKey();
+                console.error('Error:', error);
+                status.textContent = 'Error connecting to server';
+                status.style.color = '#ff3300';
             }
         }
         
@@ -634,7 +606,7 @@
             
             loading.style.display = 'flex';
             resultDiv.style.display = 'none';
-            status.textContent = 'Generating new key...';
+            status.textContent = 'Generating your key...';
             status.style.color = '#ff6600';
             
             try {
@@ -662,7 +634,7 @@
                         status.innerHTML = `<i class="fas fa-info-circle"></i> ${data.message}`;
                         status.style.color = '#ff9900';
                     } else {
-                        status.innerHTML = `<i class="fas fa-check"></i> New key generated successfully!`;
+                        status.innerHTML = `<i class="fas fa-check"></i> ${data.message}`;
                         status.style.color = '#00ff00';
                     }
                 } else {
@@ -674,7 +646,7 @@
                     }
                 }
             } catch (error) {
-                console.error('Error generating key:', error);
+                console.error('Error:', error);
                 status.textContent = 'Network error. Please try again.';
                 status.style.color = '#ff3300';
             }
@@ -688,7 +660,7 @@
             
             navigator.clipboard.writeText(currentKeyData.key)
                 .then(() => {
-                    showStatus('Key copied to clipboard!', 'success');
+                    showStatus('✅ Key copied to clipboard!', 'success');
                 })
                 .catch(err => {
                     // Fallback
@@ -700,7 +672,7 @@
                         textArea.select();
                         document.execCommand('copy');
                         document.body.removeChild(textArea);
-                        showStatus('Key copied to clipboard!', 'success');
+                        showStatus('✅ Key copied to clipboard!', 'success');
                     }
                 });
         }
@@ -737,24 +709,13 @@
             
             setTimeout(() => {
                 if (currentKeyData) {
-                    status.innerHTML = `<i class="fas fa-check"></i> Key ready to use`;
+                    status.innerHTML = `<i class="fas fa-key"></i> Key ready for Roblox`;
                     status.style.color = '#00ff00';
                 } else {
                     status.textContent = '';
                 }
             }, 3000);
         }
-        
-        // Verificar clave periódicamente
-        setInterval(() => {
-            if (currentKeyData) {
-                const savedKey = getSavedKey();
-                if (savedKey) {
-                    showKeyOnScreen(savedKey);
-                }
-            }
-        }, 30000);
     </script>
 </body>
 </html>
-              
