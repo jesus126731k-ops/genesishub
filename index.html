@@ -29,8 +29,8 @@
             max-width: 500px;
             width: 90%;
             text-align: center;
-            border: 1px solid #333;
-            box-shadow: 0 10px 30px rgba(255,102,0,0.2);
+            border: 2px solid #ff6600;
+            box-shadow: 0 10px 30px rgba(255,102,0,0.3);
         }
         
         .modal-title {
@@ -43,6 +43,7 @@
             color: #ccc;
             margin-bottom: 20px;
             line-height: 1.5;
+            font-size: 1.1rem;
         }
         
         .linkvertise-btn {
@@ -56,17 +57,20 @@
             font-size: 1.2rem;
             margin: 15px 0;
             transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
         }
         
         .linkvertise-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(255,102,0,0.3);
+            box-shadow: 0 10px 20px rgba(255,102,0,0.4);
         }
         
         .modal-note {
             color: #888;
             font-size: 0.9rem;
-            margin-top: 15px;
+            margin-top: 20px;
+            font-style: italic;
         }
         
         .close-modal {
@@ -78,11 +82,37 @@
             cursor: pointer;
             margin-top: 15px;
             font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .close-modal:hover {
+            background: #444;
         }
         
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
+        }
+        
+        /* Nuevo estilo para limpiar key */
+        .btn-clear {
+            padding: 12px 35px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #ff3300, #cc0000);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+        }
+        
+        .btn-clear:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 51, 0, 0.4);
         }
     </style>
 </head>
@@ -150,6 +180,9 @@
                         <button class="btn-copy" id="copyKeyBtn">
                             <i class="fas fa-copy"></i> COPY KEY
                         </button>
+                        <button class="btn-clear" id="clearKeyBtn">
+                            <i class="fas fa-trash"></i> CLEAR KEY
+                        </button>
                         <button class="btn-back" id="backToMenuBtn">
                             <i class="fas fa-arrow-left"></i> BACK TO MENU
                         </button>
@@ -162,6 +195,7 @@
     </div>
 
     <script>
+        // ========== CONFIGURACIÓN ==========
         const API_URL = window.location.origin;
         const SCREEN1_DURATION = 8000;
         const DISCORD_LINK = "https://discord.gg/TU_ENLACE_DISCORD";
@@ -172,30 +206,45 @@
         let animationId = null;
         let countdownInterval = null;
         
-        // ========== NUEVAS FUNCIONES AGREGADAS ==========
-        function saveKeyToStorage(key, expiresIn) {
-            const keyData = {
-                key: key,
-                expiresAt: Date.now() + (expiresIn * 1000),
-                savedAt: Date.now()
+        // ========== SISTEMA DE PERSISTENCIA DE KEYS ==========
+        function saveKeyToStorage(keyData) {
+            const storageData = {
+                key: keyData.key,
+                created: keyData.created,
+                expires_at: keyData.expires_at || (Date.now() + (keyData.expires_in * 1000)),
+                expires_in: keyData.expires_in
             };
-            localStorage.setItem('genesis_hub_key', JSON.stringify(keyData));
+            
+            localStorage.setItem('genesis_hub_key_data', JSON.stringify(storageData));
+            console.log('💾 Key guardada en localStorage');
         }
         
         function getSavedKey() {
-            const saved = localStorage.getItem('genesis_hub_key');
+            const saved = localStorage.getItem('genesis_hub_key_data');
             if (!saved) return null;
             
             try {
                 const keyData = JSON.parse(saved);
-                if (Date.now() < keyData.expiresAt) {
-                    return keyData;
+                const now = Date.now();
+                
+                if (now < keyData.expires_at) {
+                    const timeLeft = Math.floor((keyData.expires_at - now) / 1000);
+                    const hours = Math.floor(timeLeft / 3600);
+                    const minutes = Math.floor((timeLeft % 3600) / 60);
+                    const seconds = timeLeft % 60;
+                    
+                    return {
+                        ...keyData,
+                        time_left: timeLeft,
+                        formatted_time: `${hours}h ${minutes}m ${seconds}s`,
+                        is_valid: true
+                    };
                 } else {
-                    localStorage.removeItem('genesis_hub_key');
+                    localStorage.removeItem('genesis_hub_key_data');
                     return null;
                 }
             } catch {
-                localStorage.removeItem('genesis_hub_key');
+                localStorage.removeItem('genesis_hub_key_data');
                 return null;
             }
         }
@@ -215,7 +264,7 @@
                         status.textContent = '⏰ Key expired. Generate a new one.';
                         status.style.color = '#ff3300';
                     }
-                    localStorage.removeItem('genesis_hub_key');
+                    localStorage.removeItem('genesis_hub_key_data');
                 } else {
                     const hours = Math.floor(timeLeft / 3600);
                     const minutes = Math.floor((timeLeft % 3600) / 60);
@@ -232,7 +281,7 @@
         
         function displaySavedKey() {
             const savedKey = getSavedKey();
-            if (savedKey) {
+            if (savedKey && savedKey.is_valid) {
                 const keyElement = document.getElementById('generatedKey');
                 const resultDiv = document.getElementById('keyResult');
                 const loading = document.getElementById('loadingKey');
@@ -242,17 +291,15 @@
                     loading.style.display = 'none';
                     resultDiv.style.display = 'block';
                     
-                    const timeLeft = Math.floor((savedKey.expiresAt - Date.now()) / 1000);
-                    if (timeLeft > 0) {
-                        startKeyCountdown(timeLeft);
-                    }
+                    startKeyCountdown(savedKey.time_left);
+                    
                     return true;
                 }
             }
             return false;
         }
-        // ========== FIN DE NUEVAS FUNCIONES ==========
         
+        // ========== INICIALIZACIÓN ==========
         document.addEventListener('DOMContentLoaded', function() {
             initParticles();
             setupEvents();
@@ -312,14 +359,28 @@
             update();
         }
         
+        // ========== EVENTOS ==========
         function setupEvents() {
-            document.getElementById('createKeyBtn').addEventListener('click', () => checkLinkvertiseBeforeGenerate());
-            document.getElementById('tutorialBtn').addEventListener('click', () => window.open(TUTORIAL_LINK, '_blank'));
-            document.getElementById('discordBtn').addEventListener('click', () => window.open(DISCORD_LINK, '_blank'));
+            document.getElementById('createKeyBtn').addEventListener('click', () => {
+                checkLinkvertiseBeforeGenerate();
+            });
+            
+            document.getElementById('tutorialBtn').addEventListener('click', () => {
+                window.open(TUTORIAL_LINK, '_blank');
+            });
+            
+            document.getElementById('discordBtn').addEventListener('click', () => {
+                window.open(DISCORD_LINK, '_blank');
+            });
+            
             document.getElementById('copyKeyBtn').addEventListener('click', copyKey);
-            document.getElementById('backToMenuBtn').addEventListener('click', () => changeScreen(2));
+            document.getElementById('clearKeyBtn').addEventListener('click', clearKey);
+            document.getElementById('backToMenuBtn').addEventListener('click', () => {
+                changeScreen(2);
+            });
         }
         
+         // ========== LINKVERTISE ==========
         async function checkLinkvertiseBeforeGenerate() {
             const status = document.getElementById('statusMessage');
             status.textContent = 'Checking Linkvertise...';
@@ -335,6 +396,7 @@
                     showLinkvertiseModal();
                 }
             } catch (error) {
+                console.error('Error:', error);
                 showLinkvertiseModal();
             }
         }
@@ -345,17 +407,18 @@
             
             modal.innerHTML = `
                 <div class="modal-content">
-                    <h2 class="modal-title">⚠️ Linkvertise Required</h2>
+                    <h2 class="modal-title">⚠️ LINKVERTISE REQUIRED</h2>
                     <p class="modal-text">
-                        Complete Linkvertise to generate a key.
+                        To generate a key, you must complete the Linkvertise.<br>
+                        This helps support our project!
                     </p>
                     
-                    <a href="${LINKVERTISE_URL}" target="_blank" class="linkvertise-btn">
-                        🔗 Go to Linkvertise
+                    <a href="${LINKVERTISE_URL}" target="_blank" class="linkvertise-btn" id="goToLinkvertiseBtn">
+                        🔗 GO TO LINKVERTISE
                     </a>
                     
                     <p class="modal-note">
-                        After completing, return and click "CREATE YOUR KEY" again.
+                        Complete ALL steps, then return here and click "CREATE YOUR KEY" again.
                     </p>
                     
                     <button class="close-modal">Cancel</button>
@@ -364,6 +427,35 @@
             
             document.body.appendChild(modal);
             
+            const linkvertiseBtn = modal.querySelector('#goToLinkvertiseBtn');
+            linkvertiseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const link = this.href;
+                
+                localStorage.setItem('linkvertise_start_time', Date.now().toString());
+                window.open(link, '_blank');
+                
+                const modalText = modal.querySelector('.modal-text');
+                modalText.innerHTML = `
+                    <strong style="color:#ff6600">✅ Linkvertise opened in new tab!</strong><br>
+                    Complete all steps, then return here.
+                `;
+                
+                linkvertiseBtn.textContent = '✅ LINKVERTISE OPENED';
+                linkvertiseBtn.style.background = 'linear-gradient(135deg, #00cc44, #009933)';
+                linkvertiseBtn.style.pointerEvents = 'none';
+                
+                setTimeout(() => {
+                    document.body.removeChild(modal);
+                    
+                    const status = document.getElementById('statusMessage');
+                    if (status) {
+                        status.textContent = 'Linkvertise opened. Complete it and return here.';
+                        status.style.color = '#ff6600';
+                    }
+                }, 3000);
+            });
+            
             modal.querySelector('.close-modal').addEventListener('click', () => {
                 document.body.removeChild(modal);
                 document.getElementById('statusMessage').textContent = 'Key generation cancelled';
@@ -371,16 +463,20 @@
             });
         }
         
+        // ========== NAVEGACIÓN ==========
         function changeScreen(screenNumber) {
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.add('hidden');
             });
             
             setTimeout(() => {
-                document.getElementById(`screen${screenNumber}`).classList.remove('hidden');
+                const screenElement = document.getElementById(`screen${screenNumber}`);
+                if (screenElement) {
+                    screenElement.classList.remove('hidden');
+                }
                 
                 if (screenNumber === 3) {
-                    // PRIMERO VER SI YA HAY KEY GUARDADA
+                    // VER SI YA HAY KEY GUARDADA
                     if (!displaySavedKey()) {
                         generateKey();
                     }
@@ -388,6 +484,7 @@
             }, 50);
         }
         
+        // ========== GENERAR KEY ==========
         async function generateKey() {
             const loading = document.getElementById('loadingKey');
             const result = document.getElementById('keyResult');
@@ -397,12 +494,18 @@
             loading.style.display = 'flex';
             result.style.display = 'none';
             status.textContent = '';
+            status.style.color = '#aaa';
             
             try {
                 const response = await fetch(`${API_URL}/generate-key`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({timestamp: Date.now()})
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        timestamp: Date.now(),
+                        source: 'web_page'
+                    })
                 });
                 
                 const data = await response.json();
@@ -411,32 +514,41 @@
                     loading.style.display = 'none';
                     
                     if (data.success && data.key) {
+                        // MOSTRAR KEY
                         keyElement.textContent = data.key;
                         result.style.display = 'block';
                         
-                        // GUARDAR KEY EN STORAGE (NUEVO)
-                        saveKeyToStorage(data.key, data.expires_in);
+                        // GUARDAR EN STORAGE
+                        saveKeyToStorage(data);
                         
-                        // INICIAR CONTADOR (NUEVO)
+                        // INICIAR CONTADOR
                         startKeyCountdown(data.expires_in);
                         
-                        status.textContent = '✓ Key generated!';
+                        status.textContent = '✅ Key generated! Copy and use in Roblox.';
                         status.style.color = '#ff6600';
+                        
+                        console.log(`🔑 Key generada: ${data.key}`);
+                        
                     } else {
-                        status.textContent = data.message || 'Error';
+                        status.textContent = data.message || 'Error generating key';
                         status.style.color = '#ff3300';
+                        
+                        if (data.error_code === 'LINKVERTISE_REQUIRED') {
+                            showLinkvertiseModal();
+                        }
                     }
-                }, 1000);
+                }, 1500);
                 
             } catch (error) {
                 setTimeout(() => {
                     loading.style.display = 'none';
-                    status.textContent = 'Connection error';
+                    status.textContent = '⚠️ Connection error. Try again.';
                     status.style.color = '#ff3300';
-                }, 1000);
+                }, 1500);
             }
         }
         
+        // ========== COPIAR KEY ==========
         function copyKey() {
             const keyText = document.getElementById('generatedKey').textContent;
             
@@ -444,24 +556,50 @@
             
             navigator.clipboard.writeText(keyText).then(() => {
                 const status = document.getElementById('statusMessage');
-                status.textContent = '✓ Key copied!';
-                status.style.color = '#ff6600';
+                status.textContent = '✅ Key copied to clipboard!';
+                status.style.color = '#00ff00';
                 
                 const copyBtn = document.getElementById('copyKeyBtn');
-                const original = copyBtn.innerHTML;
+                const originalHTML = copyBtn.innerHTML;
+                const originalBg = copyBtn.style.background;
+                
                 copyBtn.innerHTML = '<i class="fas fa-check"></i> COPIED!';
                 copyBtn.style.background = 'linear-gradient(135deg, #00ff88, #00cc44)';
                 
                 setTimeout(() => {
-                    copyBtn.innerHTML = original;
-                    copyBtn.style.background = 'linear-gradient(135deg, #ff6600, #ff3300)';
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.style.background = originalBg;
                 }, 2000);
+                
             }).catch(() => {
-                document.getElementById('statusMessage').textContent = 'Failed to copy';
+                document.getElementById('statusMessage').textContent = '❌ Failed to copy key';
                 document.getElementById('statusMessage').style.color = '#ff3300';
             });
         }
         
+        // ========== LIMPIAR KEY ==========
+        function clearKey() {
+            if (confirm('Are you sure you want to delete your current key? You will need to generate a new one.')) {
+                localStorage.removeItem('genesis_hub_key_data');
+                
+                if (countdownInterval) clearInterval(countdownInterval);
+                
+                const resultDiv = document.getElementById('keyResult');
+                const loading = document.getElementById('loadingKey');
+                const status = document.getElementById('statusMessage');
+                
+                if (resultDiv) resultDiv.style.display = 'none';
+                if (loading) loading.style.display = 'flex';
+                if (status) {
+                    status.textContent = '🗑️ Key deleted. Generate a new one.';
+                    status.style.color = '#ff6600';
+                }
+                
+                console.log('🗑️ Key eliminada por usuario');
+            }
+        }
+        
+        // ========== LIMPIAR ==========
         window.addEventListener('beforeunload', function() {
             if (animationId) cancelAnimationFrame(animationId);
             if (countdownInterval) clearInterval(countdownInterval);
