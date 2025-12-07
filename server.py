@@ -1,6 +1,7 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, redirect
 from flask_cors import CORS
 import os, json, time, random, string, hashlib
+from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
@@ -21,7 +22,6 @@ if not os.path.exists(LINKVERTISE_FILE):
     with open(LINKVERTISE_FILE, "w") as f:
         json.dump({}, f)
 
-# ========== FUNCIONES MEJORADAS PARA ROBLOX ==========
 def get_real_ip():
     ip_headers = ['X-Real-IP', 'X-Forwarded-For', 'CF-Connecting-IP']
     for header in ip_headers:
@@ -38,34 +38,12 @@ def get_unique_user_id():
     return hashlib.md5(f"{ip}{user_agent[:50]}".encode()).hexdigest()
 
 def generate_key():
-    """Genera key de 15 caracteres que ROBLOX PUEDE VERIFICAR"""
     key_parts = []
     for _ in range(3):
-        # 3 letras + 2 números = 5 caracteres por segmento
         letters = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=3))
         numbers = ''.join(random.choices('0123456789', k=2))
         key_parts.append(f"{letters}{numbers}")
-    
-    key = '-'.join(key_parts)
-    
-    # Verificar que NO exista ya
-    if not is_key_already_used(key):
-        return key
-    else:
-        return generate_key()
-
-def is_key_already_used(key):
-    try:
-        if os.path.exists(DATA_FILE):
-            with open(DATA_FILE, "r") as f:
-                data = json.load(f)
-            
-            for info in data.values():
-                if info.get("key") == key:
-                    return True
-        return False
-    except:
-        return False
+    return '-'.join(key_parts)
 
 def mark_linkvertise_completed(user_id):
     try:
@@ -77,8 +55,7 @@ def mark_linkvertise_completed(user_id):
     data[user_id] = {
         "completed": True,
         "completed_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "timestamp": time.time(),
-        "expires_at": time.time() + 86400  # 24 horas
+        "timestamp": time.time()
     }
     
     with open(LINKVERTISE_FILE, "w") as f:
@@ -93,13 +70,8 @@ def check_linkvertise_completed(user_id):
         return False
     
     if user_id in data:
-        user_data = data[user_id]
-        current_time = time.time()
-        
-        # Verificar si está completado y no ha expirado (24h)
-        if user_data.get("completed") and current_time < user_data.get("expires_at", 0):
-            return True
-    
+        if time.time() - data[user_id].get("timestamp", 0) < 86400:
+            return data[user_id].get("completed", False)
     return False
 
 def clean_keys():
@@ -114,10 +86,8 @@ def clean_keys():
     
     with open(DATA_FILE, "w") as f:
         json.dump(cleaned, f, indent=2)
-    
     return len(data) - len(cleaned)
 
-# ========== RUTAS PRINCIPALES ==========
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -126,156 +96,161 @@ def index():
 def static_files(filename):
     return send_from_directory(".", filename)
 
-# ========== PÁGINA DE LINKVERTISE (DISEÑO RESTAURADO) ==========
-@app.route("/linkvertise")
-@app.route("/linkvertise/")
 @app.route("/linkvertise-success")
-@app.route("/linkvertise-success/")
-def handle_linkvertise():
+def linkvertise_success():
     user_id = get_unique_user_id()
     mark_linkvertise_completed(user_id)
     
-    html_content = f'''
+    return '''
     <!DOCTYPE html>
-    <html lang="en">
+    <html>
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>✅ Linkvertise Completed - Genesis Hub V2</title>
+        <meta http-equiv="refresh" content="3;url=''' + YOUR_WEBSITE + '''">
+        <title>✅ Linkvertise Completed</title>
         <style>
-            body {{
-                background: #000;
-                color: #fff;
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
                 font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            
+            body {
+                background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+                color: #fff;
+                min-height: 100vh;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                min-height: 100vh;
-                margin: 0;
-                padding: 20px;
                 text-align: center;
-            }}
+                padding: 20px;
+            }
             
-            .container {{
-                background: #1a1a1a;
-                padding: 40px;
-                border-radius: 15px;
-                border: 2px solid #00ff00;
-                max-width: 500px;
-                width: 90%;
-                box-shadow: 0 10px 30px rgba(0, 255, 0, 0.2);
-            }}
+            .success-container {
+                background: rgba(10, 10, 10, 0.95);
+                padding: 50px 40px;
+                border-radius: 20px;
+                border: 2px solid #ff6600;
+                max-width: 600px;
+                width: 100%;
+                box-shadow: 0 10px 40px rgba(255, 102, 0, 0.3);
+            }
             
-            .success {{
+            .success-icon {
+                font-size: 5rem;
                 color: #00ff00;
-                font-size: 28px;
                 margin-bottom: 20px;
-                font-weight: bold;
-            }}
+                animation: bounce 1s infinite alternate;
+            }
             
-            .message {{
-                color: #ccc;
-                font-size: 18px;
-                margin: 20px 0;
-                line-height: 1.5;
-            }}
+            @keyframes bounce {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-10px); }
+            }
             
-            .countdown {{
+            .success-title {
+                font-size: 2.5rem;
                 color: #ff6600;
-                font-size: 20px;
-                margin: 30px 0;
-                font-weight: bold;
-            }}
+                margin-bottom: 20px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
             
-            .button {{
+            .success-message {
+                font-size: 1.3rem;
+                color: #ccc;
+                margin-bottom: 30px;
+                line-height: 1.6;
+            }
+            
+            .countdown {
+                font-size: 1.5rem;
+                color: #ff9900;
+                margin: 25px 0;
+                padding: 15px;
+                background: rgba(255, 153, 0, 0.1);
+                border-radius: 10px;
+                border: 1px solid #ff9900;
+            }
+            
+            .redirect-button {
                 display: inline-block;
                 background: linear-gradient(135deg, #ff6600, #ff3300);
                 color: white;
-                padding: 15px 30px;
-                border-radius: 10px;
+                padding: 16px 45px;
+                border-radius: 12px;
                 text-decoration: none;
                 font-weight: bold;
-                font-size: 18px;
+                font-size: 1.2rem;
                 margin-top: 20px;
                 transition: all 0.3s ease;
-            }}
+                border: none;
+                cursor: pointer;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
             
-            .button:hover {{
+            .redirect-button:hover {
                 transform: translateY(-3px);
-                box-shadow: 0 10px 20px rgba(255, 102, 0, 0.4);
-            }}
+                box-shadow: 0 10px 25px rgba(255, 102, 0, 0.4);
+            }
             
-            .note {{
+            .note {
                 color: #888;
-                font-size: 14px;
+                font-size: 0.9rem;
                 margin-top: 30px;
                 font-style: italic;
-            }}
+            }
         </style>
         <script>
-            let seconds = 5;
-            const countdownElement = document.getElementById('countdown');
-            
-            function updateCountdown() {{
-                countdownElement.textContent = 'Redirigiendo en ' + seconds + ' segundos...';
+            let seconds = 3;
+            function updateCountdown() {
+                document.getElementById('countdown').textContent = seconds;
                 seconds--;
                 
-                if (seconds < 0) {{
-                    window.location.href = "{YOUR_WEBSITE}";
-                }} else {{
-                    setTimeout(updateCountdown, 1000);
-                }}
-            }}
+                if (seconds < 0) {
+                    window.location.href = "''' + YOUR_WEBSITE + '''";
+                }
+            }
             
-            // Iniciar cuenta regresiva
-            updateCountdown();
+            // Iniciar cuenta regresiva inmediatamente
+            setInterval(updateCountdown, 1000);
             
-            // También redirigir después de 5 segundos
-            setTimeout(function() {{
-                window.location.href = "{YOUR_WEBSITE}";
-            }}, 5000);
+            // Redirigir después de 3 segundos por seguridad
+            setTimeout(function() {
+                window.location.href = "''' + YOUR_WEBSITE + '''";
+            }, 3000);
         </script>
     </head>
     <body>
-        <div class="container">
-            <div class="success">✅ ¡LINKVERTISE COMPLETADO!</div>
-            
-            <div class="message">
-                ¡Gracias por apoyar Genesis Hub V2!<br>
-                Tu verificación ha sido registrada exitosamente.
+        <div class="success-container">
+            <div class="success-icon">✅</div>
+            <h1 class="success-title">LINKVERTISE COMPLETED!</h1>
+            <p class="success-message">
+                Thank you for completing the verification.<br>
+                You will be redirected to Genesis Hub V2 automatically.
+            </p>
+            <div class="countdown">
+                Redirecting in <span id="countdown">3</span> seconds...
             </div>
-            
-            <div class="message">
-                Ahora puedes regresar y generar tu key.
-            </div>
-            
-            <div class="countdown" id="countdown">
-                Redirigiendo en 5 segundos...
-            </div>
-            
-            <a href="{YOUR_WEBSITE}" class="button">
-                🚀 REGRESAR A GENESIS HUB
+            <a href="''' + YOUR_WEBSITE + '''" class="redirect-button">
+                Click here if not redirected
             </a>
-            
-            <div class="note">
-                Si no eres redirigido automáticamente, haz click en el botón.
-            </div>
+            <p class="note">
+                Your key is ready to be generated on the next page.
+            </p>
         </div>
     </body>
     </html>
     '''
-    
-    return html_content
 
 @app.route("/check-linkvertise", methods=["GET"])
 def check_linkvertise():
     user_id = get_unique_user_id()
     completed = check_linkvertise_completed(user_id)
-    
-    return jsonify({
-        "completed": completed,
-        "message": "Linkvertise completed" if completed else "Linkvertise required"
-    })
+    return jsonify({"completed": completed, "user_id": user_id})
 
 @app.route("/generate-key", methods=["POST"])
 def generate_key_endpoint():
@@ -284,60 +259,68 @@ def generate_key_endpoint():
     user_id = get_unique_user_id()
     ip = get_real_ip()
     
-    # 1. VERIFICAR LINKVERTISE
     if not check_linkvertise_completed(user_id):
         return jsonify({
             "success": False,
             "message": "Complete Linkvertise first",
-            "error_code": "LINKVERTISE_REQUIRED"
+            "linkvertise_url": LINKVERTISE_URL
         }), 403
     
     current_time = time.time()
     
-    # 2. CARGAR DATOS
-    data = {}
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, "r") as f:
-                data = json.load(f)
-        except:
-            data = {}
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+    except:
+        data = {}
     
-    # 3. VERIFICAR SI YA TIENE UNA KEY ACTIVA (POR USER_ID)
-    user_has_active_key = False
-    remaining_time = 0
+    # Verificar si ya tiene una clave válida
+    user_has_key = False
+    user_key_expires = 0
+    user_key = None
     
-    for key_info in data.values():
-        if key_info.get("user_id") == user_id:
-            if current_time < key_info.get("expires", 0):
-                user_has_active_key = True
-                remaining_time = key_info.get("expires", 0) - current_time
-                break
+    for key_data in data.values():
+        if key_data.get("user_id") == user_id:
+            user_has_key = True
+            user_key_expires = key_data.get("expires", 0)
+            user_key = key_data.get("key")
+            break
     
-    if user_has_active_key and remaining_time > 0:
-        hours = int(remaining_time / 3600)
-        minutes = int((remaining_time % 3600) / 60)
-        seconds = int(remaining_time % 60)
+    # Si tiene clave y no ha expirado, devolverla
+    if user_has_key and current_time < user_key_expires:
+        remaining = user_key_expires - current_time
+        hours = int(remaining / 3600)
+        minutes = int((remaining % 3600) / 60)
+        
         return jsonify({
-            "success": False,
-            "message": f"Wait {hours}h {minutes}m {seconds}s",
-            "time_remaining": remaining_time
-        }), 429
+            "success": True,
+            "key": user_key,
+            "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "expires": user_key_expires,
+            "expires_at": datetime.fromtimestamp(user_key_expires).strftime('%Y-%m-%d %H:%M:%S'),
+            "existing": True,
+            "time_left": {
+                "hours": hours,
+                "minutes": minutes,
+                "seconds": int(remaining % 60)
+            },
+            "message": f"Your existing key is still valid for {hours}h {minutes}m"
+        })
     
-    # 4. GENERAR NUEVA KEY
+    # Generar nueva clave
     key = generate_key()
+    expires_at = current_time + COOLDOWN
     
-    # 5. GUARDAR KEY
     data[ip] = {
         "key": key,
         "created": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "expires": current_time + COOLDOWN,
+        "expires": expires_at,
         "ip": ip,
         "user_agent": request.headers.get('User-Agent', ''),
         "user_id": user_id,
         "linkvertise_completed": True,
         "used_in_roblox": False,
-        "roblox_used_at": None
+        "expires_at_formatted": datetime.fromtimestamp(expires_at).strftime('%Y-%m-%d %H:%M:%S')
     }
     
     with open(DATA_FILE, "w") as f:
@@ -347,36 +330,55 @@ def generate_key_endpoint():
         "success": True,
         "key": key,
         "created": data[ip]["created"],
+        "expires": expires_at,
+        "expires_at": data[ip]["expires_at_formatted"],
         "expires_in": COOLDOWN,
-        "expires_at": data[ip]["expires"],
-        "message": "Key generated successfully!"
+        "existing": False,
+        "time_left": {
+            "hours": 24,
+            "minutes": 0,
+            "seconds": 0
+        },
+        "message": "New key generated successfully!"
     })
 
 @app.route("/check-key/<key>", methods=["GET"])
 def check_key(key):
-    """VERIFICACIÓN PARA ROBLOX - CRÍTICO"""
     clean_keys()
     
     try:
         with open(DATA_FILE, "r") as f:
             data = json.load(f)
     except:
-        return jsonify({"error": "Database error"}), 500
+        return jsonify({"error": "DB error"}), 500
     
     current_time = time.time()
     
     for info in data.values():
         if info.get("key") == key:
             expired = current_time >= info.get("expires", 0)
+            expires_at = info.get("expires", 0)
+            
+            # Calcular tiempo restante
+            time_left = expires_at - current_time
+            hours_left = max(0, int(time_left / 3600))
+            minutes_left = max(0, int((time_left % 3600) / 60))
+            seconds_left = max(0, int(time_left % 60))
             
             return jsonify({
                 "exists": True,
                 "expired": expired,
                 "created": info.get("created"),
-                "expires_at": info.get("expires"),
                 "used_in_roblox": info.get("used_in_roblox", False),
-                "user_id": info.get("user_id"),
-                "message": "Key is valid" if not expired else "Key expired"
+                "key": key,
+                "expires_at": info.get("expires_at_formatted", ""),
+                "time_left": {
+                    "total_seconds": time_left,
+                    "hours": hours_left,
+                    "minutes": minutes_left,
+                    "seconds": seconds_left
+                },
+                "message": "Key valid" if not expired else "Key expired"
             })
     
     return jsonify({
@@ -384,24 +386,20 @@ def check_key(key):
         "message": "Key not found"
     })
 
-@app.route("/verify-roblox", methods=["POST"])
+@app.route("/verify-roblox", methods=["GET"])
 def verify_roblox():
-    """MARCA UNA KEY COMO USADA EN ROBLOX"""
-    data = request.get_json()
+    key = request.args.get('key')
     
-    if not data or 'key' not in data:
-        return jsonify({"success": False, "error": "No key provided"}), 400
+    if not key:
+        return jsonify({"success": False, "error": "No key"}), 400
     
-    key = data['key']
     clean_keys()
     
-    keys_data = {}
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, "r") as f:
-                keys_data = json.load(f)
-        except:
-            return jsonify({"success": False, "error": "Database error"}), 500
+    try:
+        with open(DATA_FILE, "r") as f:
+            keys_data = json.load(f)
+    except:
+        return jsonify({"success": False, "error": "DB error"}), 500
     
     current_time = time.time()
     
@@ -415,76 +413,57 @@ def verify_roblox():
                     with open(DATA_FILE, "w") as f:
                         json.dump(keys_data, f, indent=2)
                     
-                    return jsonify({
-                        "success": True,
-                        "valid": True,
-                        "message": "Key verified for Roblox"
-                    })
+                    return jsonify({"success": True, "valid": True, "message": "Key verified successfully"})
                 else:
-                    return jsonify({
-                        "success": True,
-                        "valid": True,
-                        "message": "Key already used in Roblox"
-                    })
+                    return jsonify({"success": True, "valid": True, "message": "Key already used"})
             else:
-                return jsonify({
-                    "success": False,
-                    "valid": False,
-                    "error": "Key expired"
-                }), 410
+                return jsonify({"success": False, "error": "Key expired"}), 410
     
-    return jsonify({
-        "success": False,
-        "valid": False,
-        "error": "Invalid key"
-    }), 404
+    return jsonify({"success": False, "error": "Invalid key"}), 404
 
-# ========== ENDPOINTS DE DIAGNÓSTICO ==========
-@app.route("/api-status", methods=["GET"])
-def api_status():
-    """Verifica que la API esté funcionando"""
-    return jsonify({
-        "status": "online",
-        "service": "Genesis Hub V2",
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "keys_active": sum(1 for info in json.load(open(DATA_FILE)).values() if time.time() < info.get("expires", 0)) if os.path.exists(DATA_FILE) else 0
-    })
-
-@app.route("/key-info/<key>", methods=["GET"])
-def key_info(key):
-    """Información detallada de una key"""
-    clean_keys()
+@app.route("/get-existing-key", methods=["GET"])
+def get_existing_key():
+    user_id = get_unique_user_id()
+    ip = get_real_ip()
     
     try:
         with open(DATA_FILE, "r") as f:
             data = json.load(f)
     except:
-        return jsonify({"error": "Database error"}), 500
+        return jsonify({"success": False, "message": "No key found"})
     
     current_time = time.time()
     
-    for info in data.values():
-        if info.get("key") == key:
-            remaining = info.get("expires", 0) - current_time
-            hours = int(remaining / 3600) if remaining > 0 else 0
-            minutes = int((remaining % 3600) / 60) if remaining > 0 else 0
-            
-            return jsonify({
-                "found": True,
-                "key": key,
-                "created": info.get("created"),
-                "expires_in": f"{hours}h {minutes}m",
-                "expired": remaining <= 0,
-                "used_in_roblox": info.get("used_in_roblox", False),
-                "user_id": info.get("user_id")
-            })
+    # Buscar clave por user_id
+    for key_data in data.values():
+        if key_data.get("user_id") == user_id:
+            if current_time < key_data.get("expires", 0):
+                # Calcular tiempo restante
+                time_left = key_data.get("expires", 0) - current_time
+                hours = int(time_left / 3600)
+                minutes = int((time_left % 3600) / 60)
+                seconds = int(time_left % 60)
+                
+                return jsonify({
+                    "success": True,
+                    "key": key_data.get("key"),
+                    "expires_at": key_data.get("expires_at_formatted", ""),
+                    "expired": False,
+                    "time_left": {
+                        "total_seconds": time_left,
+                        "hours": hours,
+                        "minutes": minutes,
+                        "seconds": seconds
+                    },
+                    "message": f"Existing key found (expires in {hours}h {minutes}m)"
+                })
     
-    return jsonify({"found": False, "key": key})
+    return jsonify({"success": False, "message": "No valid key found"})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
-    print(f"🚀 Genesis Hub V2 - Roblox Ready")
-    print(f"🌐 URL: {YOUR_WEBSITE}")
+    print("🚀 Genesis Hub V2 - Roblox Ready")
+    print(f"📱 Website: {YOUR_WEBSITE}")
     print(f"🔗 Linkvertise: {LINKVERTISE_URL}")
-    print(f"🔑 Key Format: ABC12-XYZ34-PQR56")
+    print(f"🌐 Server running on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
