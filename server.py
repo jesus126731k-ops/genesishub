@@ -76,7 +76,7 @@ def clean_keys():
     
     return len(data) - len(cleaned)
 
-# ========== ENDPOINTS FALTANTES ==========
+
 
 @app.route("/favicon.ico")
 def favicon():

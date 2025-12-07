@@ -8,7 +8,7 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;background:#000;color:#fff;overflow:hidden;height:100vh}#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}.particle{position:absolute;width:2px;height:2px;background:rgba(255,255,255,0.8);border-radius:50%;pointer-events:none}.screen{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;z-index:1}.hidden{opacity:0;pointer-events:none;visibility:hidden}#screen1{background:#000}.main-title{font-size:4.5rem;font-weight:900;background:linear-gradient(90deg,#ff6600,#ff3300);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;text-transform:uppercase;letter-spacing:2px;animation:titledrop 1.2s both;text-shadow:0 5px 15px rgba(255,102,0,0.3)}@keyframes titledrop{0%{transform:translateY(-100px) scale(0.8);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}.subtitle{font-size:1.5rem;color:#aaa;margin-bottom:50px;animation:subtitlefade 1.5s ease 0.3s both}@keyframes subtitlefade{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}.discord-profiles{display:flex;gap:40px;position:absolute;bottom:40px;animation:profilesfade 1.8s ease 0.6s both}@keyframes profilesfade{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}.profile{display:flex;flex-direction:column;align-items:center}.discord-icon{width:60px;height:60px;background:linear-gradient(135deg,#5865F2,#4752c4);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:10px;box-shadow:0 4px 12px rgba(88,101,242,0.4)}.discord-icon i{font-size:28px}.username{font-size:1.1rem;color:#fff;background:rgba(20,20,20,0.9);padding:6px 15px;border-radius:20px;border:1px solid #333}#screen2{background:#000}.title-section{margin-bottom:60px;animation:titleslide 0.8s ease both}@keyframes titleslide{0%{opacity:0;transform:translateY(-30px)}100%{opacity:1;transform:translateY(0)}}.title-main{font-size:3.5rem;background:linear-gradient(90deg,#ff6600,#ff3300);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;text-transform:uppercase}.buttons-container{display:flex;flex-direction:column;gap:20px;margin-bottom:80px;animation:buttonsappear 1s ease 0.3s both}@keyframes buttonsappear{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}.btn{padding:18px 45px;font-size:1.3rem;font-weight:bold;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;justify-content:center;gap:12px;min-width:280px;text-transform:uppercase;letter-spacing:1px}.btn:hover{transform:translateY(-3px)}.btn:active{transform:translateY(0)}.btn-key{background:linear-gradient(135deg,#ff6600,#ff3300);color:#fff;box-shadow:0 4px 15px rgba(255,102,0,0.4)}.btn-tutorial{background:linear-gradient(135deg,#333,#666);color:#fff;box-shadow:0 4px 15px rgba(100,100,100,0.4)}.btn-discord{background:linear-gradient(135deg,#5865F2,#4752c4);color:#fff;box-shadow:0 4px 15px rgba(88,101,242,0.4)}.btn i{font-size:1.5rem}.footer-text{position:absolute;bottom:30px;font-size:1rem;color:#666}.key-generator{display:flex;flex-direction:column;align-items:center;max-width:700px;padding:30px;background:rgba(20,20,20,0.95);border-radius:20px;border:1px solid #333;animation:popin 0.5s ease both}@keyframes popin{0%{opacity:0;transform:scale(0.95)}100%{opacity:1;transform:scale(1)}}.key-title{font-size:3rem;background:linear-gradient(90deg,#ff6600,#ff3300);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;text-transform:uppercase}.key-label{font-size:1.7rem;color:#aaa;margin-bottom:25px}.key-display{width:100%;padding:20px;margin:25px 0;background:rgba(10,10,10,0.9);border-radius:12px;border:1px solid #333;display:flex;flex-direction:column;align-items:center;gap:20px}.key-text{font-family:'Courier New',monospace;font-size:1.8rem;letter-spacing:2px;color:#ff6600;padding:12px 25px;background:rgba(30,15,0,0.8);border-radius:8px;border:1px solid #ff6600;min-width:450px;text-align:center;word-break:break-all}.key-actions{display:flex;gap:15px}.btn-copy{padding:12px 35px;font-size:1.2rem;background:linear-gradient(135deg,#ff6600,#ff3300);color:#fff;border:none;border-radius:8px;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;gap:8px;font-weight:bold}.btn-back{padding:12px 35px;font-size:1.2rem;background:#333;color:#fff;border:none;border-radius:8px;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;gap:8px;font-weight:bold}.btn-copy:hover,.btn-back:hover{transform:translateY(-2px)}.status-message{margin-top:15px;font-size:1.1rem;color:#aaa;min-height:25px}.loading{display:flex;flex-direction:column;align-items:center;gap:15px}.spinner{width:60px;height:60px;border:4px solid rgba(255,102,0,0.2);border-top:4px solid #ff6600;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.loading-text{font-size:1.3rem;color:#ff6600;animation:pulse 1.5s infinite}@keyframes pulse{0%,100%{opacity:0.7}50%{opacity:1}}@media (max-width:768px){.main-title,.title-main,.key-title{font-size:2.5rem}.btn{min-width:250px;padding:15px 30px;font-size:1.1rem}.key-text{font-size:1.3rem;min-width:300px;padding:10px 15px}.discord-profiles{flex-direction:column;gap:25px}.key-generator{padding:20px;margin:0 15px}}
 
-        /* NUEVOS ESTILOS PARA LINKVERTISE MODAL */
+        
         .linkvertise-modal {
             position: fixed;
             top: 0;
@@ -168,7 +168,7 @@
     <script>
         const API_URL = window.location.origin;
         const SCREEN1_DURATION = 8000;
-        const DISCORD_LINK = "https://discord.gg/TU_ENLACE_DISCORD";
+        const DISCORD_LINK = "https://discord.gg/3EG2GnFEjv";
         const TUTORIAL_LINK = "https://youtube.com/TU_ENLACE_TUTORIAL";
         const LINKVERTISE_URL = "https://link-hub.net/1457789/3pNxakfWICZQ";
         
@@ -242,7 +242,7 @@
             document.getElementById('backToMenuBtn').addEventListener('click', () => changeScreen(2));
         }
         
-        // NUEVA FUNCIÓN: Verificar Linkvertise
+        
         async function checkLinkvertiseBeforeGenerate() {
             const status = document.getElementById('statusMessage');
             status.textContent = 'Checking Linkvertise completion...';
@@ -263,7 +263,7 @@
             }
         }
         
-        // NUEVA FUNCIÓN: Mostrar modal de Linkvertise
+      
         function showLinkvertiseModal() {
             const modal = document.createElement('div');
             modal.className = 'linkvertise-modal';
@@ -291,22 +291,22 @@
             
             document.body.appendChild(modal);
             
-            // Evento para cerrar modal
+           
             modal.querySelector('.close-modal').addEventListener('click', () => {
                 document.body.removeChild(modal);
                 document.getElementById('statusMessage').textContent = 'Key generation cancelled';
                 document.getElementById('statusMessage').style.color = '#ff3300';
             });
             
-            // Evento para el botón de Linkvertise
+            
             modal.querySelector('.linkvertise-btn').addEventListener('click', function(e) {
                 e.preventDefault();
                 const link = this.href;
                 
-                // Abrir en nueva pestaña
+               
                 window.open(link, '_blank');
                 
-                // Mostrar mensaje
+              
                 const modalText = modal.querySelector('.modal-text');
                 modalText.innerHTML = `
                     Linkvertise opened in new tab.<br>
