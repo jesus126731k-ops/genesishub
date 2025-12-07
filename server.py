@@ -7,10 +7,13 @@ CORS(app)
 
 DATA_FILE = "keys.json"
 LINKVERTISE_FILE = "linkvertise_tracking.json"
-COOLDOWN = 86400
+COOLDOWN = 86400  # 24 horas
 SECRET = "G3N3SIS_HUB_2025"
+
+
 LINKVERTISE_URL = "https://link-hub.net/1457789/3pNxakfWICZQ"
 YOUR_WEBSITE = "https://genesishub-v2.onrender.com"
+
 
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
@@ -20,16 +23,51 @@ if not os.path.exists(LINKVERTISE_FILE):
     with open(LINKVERTISE_FILE, "w") as f:
         json.dump({}, f)
 
+
 def generate_key():
-    parts = []
-    for _ in range(4):
-        parts.append(''.join(random.choices(string.ascii_uppercase + string.digits, k=6)))
-    return '-'.join(parts)
+    """
+    Genera key de 15 caracteres en formato: ABC12-XYZ34-PQR56
+    3 segmentos × (3 letras + 2 números) = 15 caracteres total
+    """
+    key_parts = []
+    
+    for _ in range(3):  
+        
+        letters = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=3))
+        
+        numbers = ''.join(random.choices('0123456789', k=2))
+        
+        key_parts.append(f"{letters}{numbers}")
+    
+    
+    key = '-'.join(key_parts)
+    
+    
+    if not is_key_already_used(key):
+        return key
+    else:
+        
+        return generate_key()
+
+def is_key_already_used(key):
+    
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+        
+        for info in data.values():
+            if info.get("key") == key:
+                return True
+        return False
+    except:
+        return False
 
 def get_user_id(ip, user_agent):
+    
     return hashlib.md5(f"{ip}{user_agent[:50]}".encode()).hexdigest()
 
 def mark_linkvertise_completed(user_id, ip):
+    
     try:
         with open(LINKVERTISE_FILE, "r") as f:
             data = json.load(f)
@@ -49,6 +87,7 @@ def mark_linkvertise_completed(user_id, ip):
     return True
 
 def check_linkvertise_completed(user_id):
+    
     try:
         with open(LINKVERTISE_FILE, "r") as f:
             data = json.load(f)
@@ -56,12 +95,14 @@ def check_linkvertise_completed(user_id):
         return False
     
     if user_id in data:
+        
         if time.time() - data[user_id].get("last_check", 0) < 3600:
             return data[user_id].get("completed", False)
     
     return False
 
 def clean_keys():
+    
     try:
         with open(DATA_FILE, "r") as f:
             data = json.load(f)
@@ -77,17 +118,17 @@ def clean_keys():
     return len(data) - len(cleaned)
 
 
-
-@app.route("/favicon.ico")
-def favicon():
-    return send_from_directory(".", "favicon.ico", mimetype='image/vnd.microsoft.icon')
-
-@app.route("/genesis")
-def genesis():
+@app.route("/")
+def index():
     return send_from_directory(".", "index.html")
+
+@app.route("/<path:filename>")
+def static_files(filename):
+    return send_from_directory(".", filename)
 
 @app.route("/linkvertise-success")
 def linkvertise_success():
+    
     ip = request.remote_addr
     user_agent = request.headers.get('User-Agent', '')
     user_id = get_user_id(ip, user_agent)
@@ -95,18 +136,35 @@ def linkvertise_success():
     mark_linkvertise_completed(user_id, ip)
     
     return f"""
+    <!DOCTYPE html>
     <html>
     <head>
         <meta http-equiv="refresh" content="3;url={YOUR_WEBSITE}">
         <title>Redirecting...</title>
         <style>
-            body {{ background: #000; color: #fff; font-family: Arial; text-align: center; padding: 50px; }}
-            .success {{ color: #00ff00; font-size: 24px; }}
+            body {{ 
+                background: #000; 
+                color: #fff; 
+                font-family: Arial, sans-serif; 
+                text-align: center; 
+                padding: 50px;
+                margin: 0;
+            }}
+            .success {{ 
+                color: #00ff00; 
+                font-size: 28px;
+                margin-bottom: 20px;
+            }}
+            .message {{
+                color: #ccc;
+                font-size: 16px;
+                margin-top: 20px;
+            }}
         </style>
     </head>
     <body>
-        <div class="success">✓ Linkvertise completed! Redirecting...</div>
-        <p>You will be redirected in 3 seconds...</p>
+        <div class="success">✓ ¡Linkvertise Completado!</div>
+        <div class="message">Redirigiendo a Genesis Hub V2...</div>
         <script>
             setTimeout(function() {{
                 window.location.href = "{YOUR_WEBSITE}";
@@ -116,16 +174,9 @@ def linkvertise_success():
     </html>
     """
 
-@app.route("/")
-def index():
-    return send_from_directory(".", "index.html")
-
-@app.route("/<path:filename>")
-def static_files(filename):
-    return send_from_directory(".", filename)
-
 @app.route("/check-linkvertise", methods=["GET"])
 def check_linkvertise():
+    """Verifica estado de Linkvertise"""
     ip = request.remote_addr
     user_agent = request.headers.get('User-Agent', '')
     user_id = get_user_id(ip, user_agent)
@@ -140,9 +191,11 @@ def check_linkvertise():
 
 @app.route("/can-generate", methods=["GET"])
 def can_generate():
+    
     ip = request.remote_addr
     user_agent = request.headers.get('User-Agent', '')
     user_id = get_user_id(ip, user_agent)
+    
     
     if not check_linkvertise_completed(user_id):
         return jsonify({
@@ -151,6 +204,7 @@ def can_generate():
             "linkvertise_url": LINKVERTISE_URL,
             "redirect_url": f"{YOUR_WEBSITE}/linkvertise-success"
         })
+    
     
     clean_keys()
     try:
@@ -174,11 +228,13 @@ def can_generate():
 
 @app.route("/generate-key", methods=["POST"])
 def generate_key_endpoint():
+    
     clean_keys()
     
     ip = request.remote_addr
     user_agent = request.headers.get('User-Agent', '')
     user_id = get_user_id(ip, user_agent)
+    
     
     if not check_linkvertise_completed(user_id):
         return jsonify({
@@ -195,6 +251,7 @@ def generate_key_endpoint():
     except:
         data = {}
     
+    
     if ip in data:
         remaining = data[ip]["expires"] - current_time
         if remaining > 0:
@@ -206,7 +263,10 @@ def generate_key_endpoint():
                 "time_remaining": remaining
             }), 429
     
+    
     key = generate_key()
+    
+    
     data[ip] = {
         "key": key,
         "created": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -225,15 +285,43 @@ def generate_key_endpoint():
         "success": True,
         "key": key,
         "created": data[ip]["created"],
-        "expires_in": COOLDOWN
+        "expires_in": COOLDOWN,
+        "message": "Key generated successfully! Valid for 24 hours."
     })
+
+@app.route("/check-key/<key>", methods=["GET"])
+def check_key(key):
+    
+    clean_keys()
+    
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+    except:
+        return jsonify({"error": "Database error"}), 500
+    
+    current_time = time.time()
+    
+    for info in data.values():
+        if info.get("key") == key:
+            expired = current_time >= info.get("expires", 0)
+            return jsonify({
+                "exists": True,
+                "expired": expired,
+                "created": info.get("created"),
+                "expires_at": info.get("expires"),
+                "used_in_roblox": info.get("used_in_roblox", False)
+            })
+    
+    return jsonify({"exists": False})
 
 @app.route("/verify-roblox", methods=["POST"])
 def verify_roblox():
+    
     data = request.get_json()
     
     if not data or 'key' not in data:
-        return jsonify({"success": False, "error": "No key"}), 400
+        return jsonify({"success": False, "error": "No key provided"}), 400
     
     key = data['key']
     clean_keys()
@@ -242,7 +330,7 @@ def verify_roblox():
         with open(DATA_FILE, "r") as f:
             keys_data = json.load(f)
     except:
-        return jsonify({"success": False, "error": "DB error"}), 500
+        return jsonify({"success": False, "error": "Database error"}), 500
     
     current_time = time.time()
     
@@ -265,7 +353,7 @@ def verify_roblox():
                     return jsonify({
                         "success": True,
                         "valid": True,
-                        "message": "Key already used"
+                        "message": "Key already used in Roblox"
                     })
             else:
                 return jsonify({
@@ -280,33 +368,9 @@ def verify_roblox():
         "error": "Invalid key"
     }), 404
 
-@app.route("/check-key/<key>", methods=["GET"])
-def check_key(key):
-    clean_keys()
-    
-    try:
-        with open(DATA_FILE, "r") as f:
-            data = json.load(f)
-    except:
-        return jsonify({"error": "DB error"}), 500
-    
-    current_time = time.time()
-    
-    for info in data.values():
-        if info.get("key") == key:
-            expired = current_time >= info.get("expires", 0)
-            return jsonify({
-                "exists": True,
-                "expired": expired,
-                "created": info.get("created"),
-                "expires_at": info.get("expires"),
-                "used_in_roblox": info.get("used_in_roblox", False)
-            })
-    
-    return jsonify({"exists": False})
-
 @app.route("/admin/<secret>", methods=["GET"])
-def admin(secret):
+def admin(secret)        
+
     if secret != SECRET:
         return jsonify({"error": "Unauthorized"}), 403
     
@@ -320,6 +384,7 @@ def admin(secret):
     current_time = time.time()
     active = sum(1 for info in data.values() if current_time < info.get("expires", 0))
     expired = len(data) - active
+    
     
     try:
         with open(LINKVERTISE_FILE, "r") as f:
@@ -336,8 +401,14 @@ def admin(secret):
         "linkvertise_users": linkvertise_data
     })
 
+
 if __name__ == "__main__":
-    print(f"Genesis Hub V2 - Server Running")
-    print(f"Website: {YOUR_WEBSITE}")
-    print(f"Linkvertise: {LINKVERTISE_URL}")
+    print("=" * 50)
+    print("🚀 GENESIS HUB V2 - SERVER STARTED")
+    print("=" * 50)
+    print(f"🌐 Website: {YOUR_WEBSITE}")
+    print(f"🔗 Linkvertise: {LINKVERTISE_URL}")
+    print(f"🔑 Key Format: ABC12-XYZ34-PQR56 (15 characters)")
+    print(f"⏰ Cooldown: 24 hours per IP")
+    print("=" * 50)
     app.run(host="0.0.0.0", port=3000, debug=False)

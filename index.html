@@ -149,7 +149,7 @@
                 </div>
                 
                 <div id="keyResult" style="display:none">
-                    <div class="key-text" id="generatedKey">XXXXXX-XXXXXX-XXXXXX-XXXXXX</div>
+                    <div class="key-text" id="generatedKey">ABC12-XYZ34-PQR56</div>
                     <div class="key-actions">
                         <button class="btn-copy" id="copyKeyBtn">
                             <i class="fas fa-copy"></i> COPY KEY
@@ -166,18 +166,25 @@
     </div>
 
     <script>
+        
         const API_URL = window.location.origin;
         const SCREEN1_DURATION = 8000;
         const DISCORD_LINK = "https://discord.gg/3EG2GnFEjv";
         const TUTORIAL_LINK = "https://youtube.com/TU_ENLACE_TUTORIAL";
-        const LINKVERTISE_URL = "https://link-hub.net/1457789/3pNxakfWICZQ";
+        
+        
+        const LINKVERTISE_STORAGE_KEY = 'genesis_hub_linkvertise_completed';
+        const LINKVERTISE_VALID_HOURS = 24;
+        const VALID_DURATION = LINKVERTISE_VALID_HOURS * 60 * 60 * 1000;
         
         let particles = [];
         let animationId = null;
         
+        
         document.addEventListener('DOMContentLoaded', function() {
             initParticles();
             setupEvents();
+            checkLinkvertiseStatusOnLoad();
             
             setTimeout(() => {
                 changeScreen(2);
@@ -185,6 +192,146 @@
             
             animateParticles();
         });
+        
+        
+        function checkLinkvertiseStatusOnLoad() {
+            const completedData = localStorage.getItem(LINKVERTISE_STORAGE_KEY);
+            
+            if (completedData) {
+                try {
+                    const data = JSON.parse(completedData);
+                    const now = Date.now();
+                    
+                    if (data.completed && data.timestamp && (now - data.timestamp) < VALID_DURATION) {
+                        const timeLeft = VALID_DURATION - (now - data.timestamp);
+                        const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+                        console.log(`✅ Linkvertise completado. Válido por ${hoursLeft}h más.`);
+                    }
+                } catch (e) {
+                    localStorage.removeItem(LINKVERTISE_STORAGE_KEY);
+                }
+            }
+        }
+        
+        function markLinkvertiseCompleted() {
+            const linkvertiseData = {
+                completed: true,
+                timestamp: Date.now(),
+                expires: Date.now() + VALID_DURATION
+            };
+            
+            localStorage.setItem(LINKVERTISE_STORAGE_KEY, JSON.stringify(linkvertiseData));
+            console.log('✅ Linkvertise marcado como completado.');
+        }
+        
+        
+        async function checkLinkvertiseBeforeGenerate() {
+            const status = document.getElementById('statusMessage');
+            status.textContent = 'Checking Linkvertise completion...';
+            status.style.color = '#ff6600';
+            
+            
+            const completedData = localStorage.getItem(LINKVERTISE_STORAGE_KEY);
+            
+            if (completedData) {
+                try {
+                    const data = JSON.parse(completedData);
+                    const now = Date.now();
+                    
+                    if (data.completed && data.timestamp && (now - data.timestamp) < VALID_DURATION) {
+                        // ¡YA COMPLETÓ LINKVERTISE!
+                        changeScreen(3);
+                        return;
+                    }
+                } catch (e) {
+                    localStorage.removeItem(LINKVERTISE_STORAGE_KEY);
+                }
+            }
+            
+            
+            try {
+                const response = await fetch(`${API_URL}/check-linkvertise`);
+                const data = await response.json();
+                
+                if (data.completed) {
+                    markLinkvertiseCompleted();
+                    changeScreen(3);
+                } else {
+                    showLinkvertiseModal();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showLinkvertiseModal();
+            }
+        }
+        
+        function showLinkvertiseModal() {
+            const modal = document.createElement('div');
+            modal.className = 'linkvertise-modal';
+            
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h2 class="modal-title">⚠️ Linkvertise Required</h2>
+                    <p class="modal-text">
+                        You must complete the Linkvertise to generate a key.<br>
+                        This helps support our project development!
+                    </p>
+                    
+                    <a href="${API_URL}/linkvertise-success" target="_blank" class="linkvertise-btn" id="linkvertiseActionBtn">
+                        🔗 Go to Linkvertise
+                    </a>
+                    
+                    <p class="modal-note">
+                        After completing Linkvertise, return to this page and<br>
+                        click "CREATE YOUR KEY" again. The page will remember you!
+                    </p>
+                    
+                    <button class="close-modal">Cancel</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            
+            modal.querySelector('.close-modal').addEventListener('click', () => {
+                document.body.removeChild(modal);
+                document.getElementById('statusMessage').textContent = 'Key generation cancelled';
+                document.getElementById('statusMessage').style.color = '#ff3300';
+            });
+            
+            
+            const linkvertiseBtn = modal.querySelector('#linkvertiseActionBtn');
+            linkvertiseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const link = this.href;
+                
+                localStorage.setItem('going_to_linkvertise', Date.now().toString());
+                window.open(link, '_blank');
+                
+                const modalText = modal.querySelector('.modal-text');
+                modalText.innerHTML = `
+                    <strong style="color:#ff6600">✅ Linkvertise opened!</strong><br>
+                    1. Complete ALL steps on Linkvertise<br>
+                    2. Return to this tab<br>
+                    3. Click "CREATE YOUR KEY" again
+                `;
+                
+                linkvertiseBtn.textContent = '✅ Linkvertise Opened';
+                linkvertiseBtn.style.background = 'linear-gradient(135deg, #00cc44, #009933)';
+                linkvertiseBtn.style.pointerEvents = 'none';
+                
+                setTimeout(() => {
+                    document.body.removeChild(modal);
+                    
+                    const status = document.getElementById('statusMessage');
+                    if (status) {
+                        status.textContent = '✅ Linkvertise opened. Complete it, then click "CREATE YOUR KEY" again.';
+                        status.style.color = '#ff6600';
+                    }
+                }, 3000);
+            });
+        }
+        
         
         function initParticles() {
             const container = document.getElementById('particles');
@@ -197,7 +344,6 @@
                 const size = Math.random() * 1.5 + 1;
                 particle.style.width = `${size}px`;
                 particle.style.height = `${size}px`;
-                
                 particle.style.left = `${Math.random() * 100}%`;
                 particle.style.top = `${Math.random() * 100}%`;
                 particle.style.opacity = Math.random() * 0.5 + 0.3;
@@ -234,87 +380,20 @@
             update();
         }
         
+        
         function setupEvents() {
-            document.getElementById('createKeyBtn').addEventListener('click', () => checkLinkvertiseBeforeGenerate());
+            const createKeyBtn = document.getElementById('createKeyBtn');
+            
+            createKeyBtn.addEventListener('click', function() {
+                checkLinkvertiseBeforeGenerate();
+            });
+            
             document.getElementById('tutorialBtn').addEventListener('click', () => window.open(TUTORIAL_LINK, '_blank'));
             document.getElementById('discordBtn').addEventListener('click', () => window.open(DISCORD_LINK, '_blank'));
             document.getElementById('copyKeyBtn').addEventListener('click', copyKey);
             document.getElementById('backToMenuBtn').addEventListener('click', () => changeScreen(2));
         }
         
-        
-        async function checkLinkvertiseBeforeGenerate() {
-            const status = document.getElementById('statusMessage');
-            status.textContent = 'Checking Linkvertise completion...';
-            status.style.color = '#ff6600';
-            
-            try {
-                const response = await fetch(`${API_URL}/check-linkvertise`);
-                const data = await response.json();
-                
-                if (data.completed) {
-                    changeScreen(3);
-                } else {
-                    showLinkvertiseModal();
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showLinkvertiseModal();
-            }
-        }
-        
-      
-        function showLinkvertiseModal() {
-            const modal = document.createElement('div');
-            modal.className = 'linkvertise-modal';
-            
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h2 class="modal-title">⚠️ Linkvertise Required</h2>
-                    <p class="modal-text">
-                        You must complete the Linkvertise to generate a key.<br>
-                        This helps support our project development!
-                    </p>
-                    
-                    <a href="${LINKVERTISE_URL}" target="_blank" class="linkvertise-btn">
-                        🔗 Go to Linkvertise
-                    </a>
-                    
-                    <p class="modal-note">
-                        After completing Linkvertise, you will be redirected back here.<br>
-                        Then you can generate your key.
-                    </p>
-                    
-                    <button class="close-modal">Cancel</button>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-           
-            modal.querySelector('.close-modal').addEventListener('click', () => {
-                document.body.removeChild(modal);
-                document.getElementById('statusMessage').textContent = 'Key generation cancelled';
-                document.getElementById('statusMessage').style.color = '#ff3300';
-            });
-            
-            
-            modal.querySelector('.linkvertise-btn').addEventListener('click', function(e) {
-                e.preventDefault();
-                const link = this.href;
-                
-               
-                window.open(link, '_blank');
-                
-              
-                const modalText = modal.querySelector('.modal-text');
-                modalText.innerHTML = `
-                    Linkvertise opened in new tab.<br>
-                    <strong>Complete all steps, then return here and click "CREATE YOUR KEY" again.</strong>
-                `;
-                modalText.style.color = '#ff6600';
-            });
-        }
         
         function changeScreen(screenNumber) {
             document.querySelectorAll('.screen').forEach(screen => {
@@ -330,6 +409,7 @@
             }, 50);
         }
         
+       
         async function generateKey() {
             const loading = document.getElementById('loadingKey');
             const result = document.getElementById('keyResult');
@@ -384,10 +464,11 @@
             }
         }
         
+        
         function copyKey() {
             const keyText = document.getElementById('generatedKey').textContent;
             
-            if (keyText === 'XXXXXX-XXXXXX-XXXXXX-XXXXXX') return;
+            if (keyText === 'ABC12-XYZ34-PQR56') return;
             
             navigator.clipboard.writeText(keyText).then(() => {
                 const status = document.getElementById('statusMessage');
@@ -409,6 +490,7 @@
             });
         }
         
+       
         window.addEventListener('beforeunload', function() {
             if (animationId) {
                 cancelAnimationFrame(animationId);
