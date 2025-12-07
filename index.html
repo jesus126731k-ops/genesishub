@@ -6,9 +6,9 @@
     <title>Genesis Hub V2 | Roblox Script</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* [TODOS TUS ESTILOS ACTUALES AQUÍ - NO LOS CAMBIÉ] */
         *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;background:#000;color:#fff;overflow:hidden;height:100vh}#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}.particle{position:absolute;width:2px;height:2px;background:rgba(255,255,255,0.8);border-radius:50%;pointer-events:none}.screen{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;z-index:1}.hidden{opacity:0;pointer-events:none;visibility:hidden}#screen1{background:#000}.main-title{font-size:4.5rem;font-weight:900;background:linear-gradient(90deg,#ff6600,#ff3300);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;text-transform:uppercase;letter-spacing:2px;animation:titledrop 1.2s both;text-shadow:0 5px 15px rgba(255,102,0,0.3)}@keyframes titledrop{0%{transform:translateY(-100px) scale(0.8);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}.subtitle{font-size:1.5rem;color:#aaa;margin-bottom:50px;animation:subtitlefade 1.5s ease 0.3s both}@keyframes subtitlefade{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}.discord-profiles{display:flex;gap:40px;position:absolute;bottom:40px;animation:profilesfade 1.8s ease 0.6s both}@keyframes profilesfade{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}.profile{display:flex;flex-direction:column;align-items:center}.discord-icon{width:60px;height:60px;background:linear-gradient(135deg,#5865F2,#4752c4);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:10px;box-shadow:0 4px 12px rgba(88,101,242,0.4)}.discord-icon i{font-size:28px}.username{font-size:1.1rem;color:#fff;background:rgba(20,20,20,0.9);padding:6px 15px;border-radius:20px;border:1px solid #333}#screen2{background:#000}.title-section{margin-bottom:60px;animation:titleslide 0.8s ease both}@keyframes titleslide{0%{opacity:0;transform:translateY(-30px)}100%{opacity:1;transform:translateY(0)}}.title-main{font-size:3.5rem;background:linear-gradient(90deg,#ff6600,#ff3300);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;text-transform:uppercase}.buttons-container{display:flex;flex-direction:column;gap:20px;margin-bottom:80px;animation:buttonsappear 1s ease 0.3s both}@keyframes buttonsappear{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}.btn{padding:18px 45px;font-size:1.3rem;font-weight:bold;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;justify-content:center;gap:12px;min-width:280px;text-transform:uppercase;letter-spacing:1px}.btn:hover{transform:translateY(-3px)}.btn:active{transform:translateY(0)}.btn-key{background:linear-gradient(135deg,#ff6600,#ff3300);color:#fff;box-shadow:0 4px 15px rgba(255,102,0,0.4)}.btn-tutorial{background:linear-gradient(135deg,#333,#666);color:#fff;box-shadow:0 4px 15px rgba(100,100,100,0.4)}.btn-discord{background:linear-gradient(135deg,#5865F2,#4752c4);color:#fff;box-shadow:0 4px 15px rgba(88,101,242,0.4)}.btn i{font-size:1.5rem}.footer-text{position:absolute;bottom:30px;font-size:1rem;color:#666}.key-generator{display:flex;flex-direction:column;align-items:center;max-width:700px;padding:30px;background:rgba(20,20,20,0.95);border-radius:20px;border:1px solid #333;animation:popin 0.5s ease both}@keyframes popin{0%{opacity:0;transform:scale(0.95)}100%{opacity:1;transform:scale(1)}}.key-title{font-size:3rem;background:linear-gradient(90deg,#ff6600,#ff3300);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;text-transform:uppercase}.key-label{font-size:1.7rem;color:#aaa;margin-bottom:25px}.key-display{width:100%;padding:20px;margin:25px 0;background:rgba(10,10,10,0.9);border-radius:12px;border:1px solid #333;display:flex;flex-direction:column;align-items:center;gap:20px}.key-text{font-family:'Courier New',monospace;font-size:1.8rem;letter-spacing:2px;color:#ff6600;padding:12px 25px;background:rgba(30,15,0,0.8);border-radius:8px;border:1px solid #ff6600;min-width:450px;text-align:center;word-break:break-all}.key-actions{display:flex;gap:15px}.btn-copy{padding:12px 35px;font-size:1.2rem;background:linear-gradient(135deg,#ff6600,#ff3300);color:#fff;border:none;border-radius:8px;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;gap:8px;font-weight:bold}.btn-back{padding:12px 35px;font-size:1.2rem;background:#333;color:#fff;border:none;border-radius:8px;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;gap:8px;font-weight:bold}.btn-copy:hover,.btn-back:hover{transform:translateY(-2px)}.status-message{margin-top:15px;font-size:1.1rem;color:#aaa;min-height:25px}.loading{display:flex;flex-direction:column;align-items:center;gap:15px}.spinner{width:60px;height:60px;border:4px solid rgba(255,102,0,0.2);border-top:4px solid #ff6600;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.loading-text{font-size:1.3rem;color:#ff6600;animation:pulse 1.5s infinite}@keyframes pulse{0%,100%{opacity:0.7}50%{opacity:1}}@media (max-width:768px){.main-title,.title-main,.key-title{font-size:2.5rem}.btn{min-width:250px;padding:15px 30px;font-size:1.1rem}.key-text{font-size:1.3rem;min-width:300px;padding:10px 15px}.discord-profiles{flex-direction:column;gap:25px}.key-generator{padding:20px;margin:0 15px}}
 
+        /* MODAL DE LINKVERTISE */
         .linkvertise-modal {
             position: fixed;
             top: 0;
@@ -30,8 +30,8 @@
             max-width: 500px;
             width: 90%;
             text-align: center;
-            border: 1px solid #333;
-            box-shadow: 0 10px 30px rgba(255,102,0,0.2);
+            border: 2px solid #ff6600;
+            box-shadow: 0 10px 30px rgba(255,102,0,0.3);
         }
         
         .modal-title {
@@ -44,6 +44,7 @@
             color: #ccc;
             margin-bottom: 20px;
             line-height: 1.5;
+            font-size: 1.1rem;
         }
         
         .linkvertise-btn {
@@ -57,17 +58,20 @@
             font-size: 1.2rem;
             margin: 15px 0;
             transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
         }
         
         .linkvertise-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(255,102,0,0.3);
+            box-shadow: 0 10px 20px rgba(255,102,0,0.4);
         }
         
         .modal-note {
             color: #888;
             font-size: 0.9rem;
-            margin-top: 15px;
+            margin-top: 20px;
+            font-style: italic;
         }
         
         .close-modal {
@@ -79,6 +83,11 @@
             cursor: pointer;
             margin-top: 15px;
             font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .close-modal:hover {
+            background: #444;
         }
         
         @keyframes fadeIn {
@@ -90,6 +99,7 @@
 <body>
     <div id="particles"></div>
     
+    <!-- PANTALLA 1 - INICIO -->
     <div id="screen1" class="screen">
         <h1 class="main-title">GENESIS HUB V2</h1>
         <h2 class="subtitle">Made by Jesús and Alejandro</h2>
@@ -111,6 +121,7 @@
         </div>
     </div>
     
+    <!-- PANTALLA 2 - MENÚ -->
     <div id="screen2" class="screen hidden">
         <div class="title-section">
             <h1 class="title-main">GENESIS HUB V2</h1>
@@ -134,6 +145,7 @@
         <p class="footer-text">Thank you for using our service!</p>
     </div>
     
+    <!-- PANTALLA 3 - GENERADOR DE KEYS -->
     <div id="screen3" class="screen hidden">
         <div class="key-generator">
             <h1 class="key-title">GENESIS HUB V2</h1>
@@ -163,6 +175,7 @@
     </div>
 
     <script>
+        // ========== CONFIGURACIÓN ==========
         const API_URL = window.location.origin;
         const SCREEN1_DURATION = 8000;
         const DISCORD_LINK = "https://discord.gg/TU_ENLACE_DISCORD";
@@ -172,6 +185,7 @@
         let particles = [];
         let animationId = null;
         
+        // ========== INICIALIZACIÓN ==========
         document.addEventListener('DOMContentLoaded', function() {
             initParticles();
             setupEvents();
@@ -183,6 +197,126 @@
             animateParticles();
         });
         
+        // ========== SISTEMA DE LINKVERTISE ==========
+        async function checkLinkvertiseBeforeGenerate() {
+            const status = document.getElementById('statusMessage');
+            status.textContent = 'Checking Linkvertise...';
+            status.style.color = '#ff6600';
+            
+            try {
+                // Primero verificar localStorage
+                const stored = localStorage.getItem('genesis_hub_linkvertise');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    if (data.completed && data.expires > Date.now()) {
+                        // Ya completó en las últimas 24h
+                        changeScreen(3);
+                        return;
+                    }
+                }
+                
+                // Verificar con el servidor
+                const response = await fetch(`${API_URL}/check-linkvertise`);
+                if (!response.ok) throw new Error('Server error');
+                
+                const data = await response.json();
+                
+                if (data.completed) {
+                    // Guardar en localStorage
+                    localStorage.setItem('genesis_hub_linkvertise', JSON.stringify({
+                        completed: true,
+                        expires: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
+                    }));
+                    
+                    changeScreen(3);
+                } else {
+                    // Mostrar modal de Linkvertise
+                    showLinkvertiseModal();
+                }
+                
+            } catch (error) {
+                console.log('Error checking Linkvertise:', error);
+                showLinkvertiseModal();
+            }
+        }
+        
+        function showLinkvertiseModal() {
+            const modal = document.createElement('div');
+            modal.className = 'linkvertise-modal';
+            
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h2 class="modal-title">⚠️ LINKVERTISE REQUIRED</h2>
+                    <p class="modal-text">
+                        To generate a key, you must complete the Linkvertise.<br>
+                        This helps support our project development!
+                    </p>
+                    
+                    <a href="${LINKVERTISE_URL}" target="_blank" class="linkvertise-btn" id="goToLinkvertiseBtn">
+                        🔗 GO TO LINKVERTISE
+                    </a>
+                    
+                    <p class="modal-note">
+                        <strong>Instructions:</strong><br>
+                        1. Click the button above<br>
+                        2. Complete ALL steps on Linkvertise<br>
+                        3. You will be redirected back automatically<br>
+                        4. Click "CREATE YOUR KEY" again
+                    </p>
+                    
+                    <button class="close-modal">Cancel</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Botón para ir a Linkvertise
+            const linkvertiseBtn = modal.querySelector('#goToLinkvertiseBtn');
+            linkvertiseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const link = this.href;
+                
+                // Guardar timestamp
+                localStorage.setItem('linkvertise_started', Date.now().toString());
+                
+                // Abrir en nueva pestaña
+                window.open(link, '_blank');
+                
+                // Actualizar mensaje
+                const modalText = modal.querySelector('.modal-text');
+                modalText.innerHTML = `
+                    <strong style="color:#ff6600">✅ Linkvertise opened in new tab!</strong><br>
+                    Complete all steps, then return here and<br>
+                    click "CREATE YOUR KEY" again.
+                `;
+                
+                // Cambiar botón
+                linkvertiseBtn.textContent = '✅ LINKVERTISE OPENED';
+                linkvertiseBtn.style.background = 'linear-gradient(135deg, #00cc44, #009933)';
+                linkvertiseBtn.style.pointerEvents = 'none';
+                
+                // Cerrar modal después de 3 segundos
+                setTimeout(() => {
+                    document.body.removeChild(modal);
+                    
+                    // Actualizar mensaje en la página
+                    const status = document.getElementById('statusMessage');
+                    if (status) {
+                        status.textContent = 'Linkvertise opened. Complete it and return here.';
+                        status.style.color = '#ff6600';
+                    }
+                }, 3000);
+            });
+            
+            // Botón para cerrar
+            modal.querySelector('.close-modal').addEventListener('click', () => {
+                document.body.removeChild(modal);
+                document.getElementById('statusMessage').textContent = 'Key generation cancelled';
+                document.getElementById('statusMessage').style.color = '#ff3300';
+            });
+        }
+        
+        // ========== SISTEMA DE PARTÍCULAS ==========
         function initParticles() {
             const container = document.getElementById('particles');
             const count = Math.min(30, Math.floor(window.innerWidth / 20));
@@ -194,7 +328,6 @@
                 const size = Math.random() * 1.5 + 1;
                 particle.style.width = `${size}px`;
                 particle.style.height = `${size}px`;
-                
                 particle.style.left = `${Math.random() * 100}%`;
                 particle.style.top = `${Math.random() * 100}%`;
                 particle.style.opacity = Math.random() * 0.5 + 0.3;
@@ -231,99 +364,37 @@
             update();
         }
         
+        // ========== EVENTOS ==========
         function setupEvents() {
-            document.getElementById('createKeyBtn').addEventListener('click', () => checkLinkvertiseBeforeGenerate());
-            document.getElementById('tutorialBtn').addEventListener('click', () => window.open(TUTORIAL_LINK, '_blank'));
-            document.getElementById('discordBtn').addEventListener('click', () => window.open(DISCORD_LINK, '_blank'));
+            document.getElementById('createKeyBtn').addEventListener('click', () => {
+                checkLinkvertiseBeforeGenerate();
+            });
+            
+            document.getElementById('tutorialBtn').addEventListener('click', () => {
+                window.open(TUTORIAL_LINK, '_blank');
+            });
+            
+            document.getElementById('discordBtn').addEventListener('click', () => {
+                window.open(DISCORD_LINK, '_blank');
+            });
+            
             document.getElementById('copyKeyBtn').addEventListener('click', copyKey);
-            document.getElementById('backToMenuBtn').addEventListener('click', () => changeScreen(2));
-        }
-        
-        // FUNCIÓN SIMPLIFICADA PARA LINKVERTISE
-        async function checkLinkvertiseBeforeGenerate() {
-            const status = document.getElementById('statusMessage');
-            status.textContent = 'Checking Linkvertise completion...';
-            status.style.color = '#ff6600';
-            
-            try {
-                const response = await fetch(`${API_URL}/check-linkvertise`);
-                const data = await response.json();
-                
-                if (data.completed) {
-                    changeScreen(3);
-                } else {
-                    // Abrir Linkvertise directamente
-                    window.open(LINKVERTISE_URL, '_blank');
-                    
-                    // Mostrar modal con instrucciones
-                    showLinkvertiseModal();
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showLinkvertiseModal();
-            }
-        }
-        
-        function showLinkvertiseModal() {
-            const modal = document.createElement('div');
-            modal.className = 'linkvertise-modal';
-            
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h2 class="modal-title">⚠️ Linkvertise Required</h2>
-                    <p class="modal-text">
-                        Linkvertise has been opened in a new tab.<br>
-                        Complete ALL steps, then return here and click "CREATE YOUR KEY" again.
-                    </p>
-                    
-                    <button onclick="window.open('${LINKVERTISE_URL}', '_blank')" class="linkvertise-btn">
-                        🔗 Open Linkvertise Again
-                    </button>
-                    
-                    <p class="modal-note">
-                        After completing Linkvertise, click the button below to verify.
-                    </p>
-                    
-                    <button onclick="verifyLinkvertise()" class="linkvertise-btn" style="background:linear-gradient(135deg, #00cc44, #009933)">
-                        ✅ I Completed Linkvertise
-                    </button>
-                    
-                    <button class="close-modal">Cancel</button>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            modal.querySelector('.close-modal').addEventListener('click', () => {
-                document.body.removeChild(modal);
-                document.getElementById('statusMessage').textContent = 'Key generation cancelled';
-                document.getElementById('statusMessage').style.color = '#ff3300';
+            document.getElementById('backToMenuBtn').addEventListener('click', () => {
+                changeScreen(2);
             });
         }
         
-        // Función global para verificar Linkvertise
-        window.verifyLinkvertise = function() {
-            const status = document.getElementById('statusMessage');
-            status.textContent = 'Verifying Linkvertise completion...';
-            status.style.color = '#ff6600';
-            
-            // Cerrar modal si existe
-            const modal = document.querySelector('.linkvertise-modal');
-            if (modal) document.body.removeChild(modal);
-            
-            // Intentar generar key después de 2 segundos
-            setTimeout(() => {
-                changeScreen(3);
-            }, 2000);
-        }
-        
+        // ========== NAVEGACIÓN ENTRE PANTALLAS ==========
         function changeScreen(screenNumber) {
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.add('hidden');
             });
             
             setTimeout(() => {
-                document.getElementById(`screen${screenNumber}`).classList.remove('hidden');
+                const screenElement = document.getElementById(`screen${screenNumber}`);
+                if (screenElement) {
+                    screenElement.classList.remove('hidden');
+                }
                 
                 if (screenNumber === 3) {
                     generateKey();
@@ -331,6 +402,7 @@
             }, 50);
         }
         
+        // ========== GENERAR KEY ==========
         async function generateKey() {
             const loading = document.getElementById('loadingKey');
             const result = document.getElementById('keyResult');
@@ -340,69 +412,120 @@
             loading.style.display = 'flex';
             result.style.display = 'none';
             status.textContent = '';
+            status.style.color = '#aaa';
             
             try {
                 const response = await fetch(`${API_URL}/generate-key`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({timestamp: Date.now()})
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        timestamp: Date.now(),
+                        source: 'web_page'
+                    })
                 });
                 
                 const data = await response.json();
                 
+                // Simular carga
                 setTimeout(() => {
                     loading.style.display = 'none';
                     
                     if (data.success && data.key) {
                         keyElement.textContent = data.key;
                         result.style.display = 'block';
-                        status.textContent = '✓ Key generated! Valid 24h.';
+                        status.textContent = '✅ Key generated! Valid for 24 hours.';
                         status.style.color = '#ff6600';
+                        
+                        // Guardar en localStorage
+                        localStorage.setItem('last_generated_key', data.key);
+                        
                     } else {
                         status.textContent = data.message || 'Error generating key';
                         status.style.color = '#ff3300';
+                        
+                        // Si es error de Linkvertise, mostrar modal
+                        if (data.error_code === 'LINKVERTISE_REQUIRED') {
+                            showLinkvertiseModal();
+                        }
                     }
-                }, 1000);
+                }, 1500);
                 
             } catch (error) {
                 setTimeout(() => {
                     loading.style.display = 'none';
-                    status.textContent = 'Connection error. Try again.';
+                    status.textContent = '⚠️ Connection error. Please try again.';
                     status.style.color = '#ff3300';
-                }, 1000);
+                }, 1500);
             }
         }
         
+        // ========== COPIAR KEY ==========
         function copyKey() {
             const keyText = document.getElementById('generatedKey').textContent;
             
-            if (keyText === 'ABC12-XYZ34-PQR56') return;
+            if (keyText === 'ABC12-XYZ34-PQR56') {
+                return;
+            }
             
             navigator.clipboard.writeText(keyText).then(() => {
                 const status = document.getElementById('statusMessage');
-                status.textContent = '✓ Key copied to clipboard!';
-                status.style.color = '#ff6600';
+                status.textContent = '✅ Key copied to clipboard!';
+                status.style.color = '#00ff00';
                 
                 const copyBtn = document.getElementById('copyKeyBtn');
-                const original = copyBtn.innerHTML;
+                const originalHTML = copyBtn.innerHTML;
+                const originalBg = copyBtn.style.background;
+                
                 copyBtn.innerHTML = '<i class="fas fa-check"></i> COPIED!';
                 copyBtn.style.background = 'linear-gradient(135deg, #00ff88, #00cc44)';
                 
                 setTimeout(() => {
-                    copyBtn.innerHTML = original;
-                    copyBtn.style.background = 'linear-gradient(135deg, #ff6600, #ff3300)';
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.style.background = originalBg;
                 }, 2000);
+                
             }).catch(() => {
-                document.getElementById('statusMessage').textContent = 'Failed to copy key';
+                document.getElementById('statusMessage').textContent = '❌ Failed to copy key';
                 document.getElementById('statusMessage').style.color = '#ff3300';
             });
         }
         
+        // ========== LIMPIAR ==========
         window.addEventListener('beforeunload', function() {
             if (animationId) {
                 cancelAnimationFrame(animationId);
             }
         });
+        
+        // Verificar si acaba de regresar de Linkvertise
+        function checkLinkvertiseReturn() {
+            const linkvertiseStarted = localStorage.getItem('linkvertise_started');
+            if (linkvertiseStarted) {
+                const startTime = parseInt(linkvertiseStarted);
+                const now = Date.now();
+                
+                // Si pasaron menos de 5 minutos, asumir que completó
+                if (now - startTime < 300000) { // 5 minutos
+                    localStorage.removeItem('linkvertise_started');
+                    localStorage.setItem('genesis_hub_linkvertise', JSON.stringify({
+                        completed: true,
+                        expires: now + (24 * 60 * 60 * 1000)
+                    }));
+                    
+                    const status = document.getElementById('statusMessage');
+                    if (status) {
+                        status.textContent = '✅ Linkvertise completed! You can now generate your key.';
+                        status.style.color = '#ff6600';
+                    }
+                }
+            }
+        }
+        
+        // Ejecutar verificación al cargar
+        checkLinkvertiseReturn();
     </script>
 </body>
 </html>
+    
