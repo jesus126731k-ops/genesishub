@@ -6,16 +6,16 @@ from datetime import datetime, timedelta
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-# ARCHIVOS DE DATOS
+
 DATA_FILE = "keys.json"
 LINKVERTISE_FILE = "linkvertise_tracking.json"
-COOLDOWN = 86400  # 24 horas en segundos
+COOLDOWN = 86400  
 SECRET = "G3N3SIS_HUB_2025"
 
 LINKVERTISE_URL = "https://link-hub.net/1457789/3pNxakfWICZQ"
 YOUR_WEBSITE = "https://genesishub-v2.onrender.com"
 
-# Crear archivos si no existen
+
 for file in [DATA_FILE, LINKVERTISE_FILE]:
     if not os.path.exists(file):
         with open(file, "w") as f:
@@ -73,16 +73,16 @@ def check_linkvertise_for_user_key(user_id, key=None):
     except:
         return False
     
-    # Buscar Linkvertise para esta key específica
+    
     if key:
         linkvertise_id = f"{user_id}_{key}"
         if linkvertise_id in data:
             linkvertise_data = data[linkvertise_id]
-            # Linkvertise es válido por 24h (misma duración que la key)
+            
             if time.time() - linkvertise_data.get("timestamp", 0) < COOLDOWN:
                 return linkvertise_data.get("completed", False)
     
-    # Buscar Linkvertise general del usuario (para backward compatibility)
+    
     if user_id in data:
         user_data = data[user_id]
         if time.time() - user_data.get("timestamp", 0) < COOLDOWN:
@@ -99,16 +99,16 @@ def get_user_active_key(user_id):
     
     current_time = time.time()
     
-    # Buscar todas las keys del usuario
+    
     user_keys = []
     for key_data in data.values():
         if key_data.get("user_id") == user_id:
             user_keys.append(key_data)
     
-    # Ordenar por fecha de creación (más reciente primero)
+    
     user_keys.sort(key=lambda x: x.get("created", ""), reverse=True)
     
-    # Encontrar key activa (no expirada)
+    
     for key_data in user_keys:
         if current_time < key_data.get("expires", 0):
             return key_data
@@ -122,7 +122,7 @@ def save_key(key_data):
     except:
         data = {}
     
-    # Usar IP como clave principal
+    
     ip = key_data.get("ip") or get_real_ip()
     data[ip] = key_data
     
@@ -146,19 +146,19 @@ def clean_expired_data():
     
     current_time = time.time()
     
-    # Limpiar keys expiradas
+    
     cleaned_keys = {}
     for ip, key_info in keys_data.items():
         if current_time < key_info.get("expires", 0):
             cleaned_keys[ip] = key_info
     
-    # Limpiar Linkvertise expirados (más de 24h)
+    
     cleaned_linkvertise = {}
     for link_id, link_info in linkvertise_data.items():
         if current_time - link_info.get("timestamp", 0) < COOLDOWN:
             cleaned_linkvertise[link_id] = link_info
     
-    # Guardar datos limpios
+    
     with open(DATA_FILE, "w") as f:
         json.dump(cleaned_keys, f, indent=2)
     
@@ -170,7 +170,7 @@ def clean_expired_data():
     
     return expired_keys, expired_links
 
-# ========== RUTAS DEL SERVIDOR ==========
+
 
 @app.route("/")
 def index():
@@ -184,7 +184,7 @@ def static_files(filename):
 def linkvertise_success():
     user_id = get_unique_user_id()
     
-    # Obtener key si ya existe una pendiente
+    
     try:
         with open(DATA_FILE, "r") as f:
             keys_data = json.load(f)
@@ -197,7 +197,7 @@ def linkvertise_success():
             pending_key = key_data.get("key")
             break
     
-    # Marcar Linkvertise completado PARA ESTA KEY
+    
     mark_linkvertise_completed(user_id, pending_key)
     
     return f'''
@@ -257,11 +257,11 @@ def check_user_status():
     user_id = get_unique_user_id()
     current_time = time.time()
     
-    # 1. Verificar si tiene key activa
+    
     active_key = get_user_active_key(user_id)
     
     if active_key:
-        # Tiene key activa
+        
         remaining = active_key.get("expires", 0) - current_time
         
         if remaining > 0:
@@ -280,8 +280,8 @@ def check_user_status():
                 "message": f"You have an active key for {int(remaining/3600)}h {int((remaining%3600)/60)}m"
             })
     
-    # 2. No tiene key activa o expiró
-    # Verificar si ya completó Linkvertise recientemente
+    
+    
     has_recent_linkvertise = False
     try:
         with open(LINKVERTISE_FILE, "r") as f:
@@ -289,15 +289,15 @@ def check_user_status():
     except:
         linkvertise_data = {}
     
-    # Buscar Linkvertise del usuario en las últimas 24h
+    
     for link_id, link_info in linkvertise_data.items():
         if link_info.get("user_id") == user_id:
-            if current_time - link_info.get("timestamp", 0) < 300:  # 5 minutos de gracia
+            if current_time - link_info.get("timestamp", 0) < 300:  
                 has_recent_linkvertise = True
                 break
     
     if has_recent_linkvertise:
-        # Acaba de completar Linkvertise, puede generar key
+        
         return jsonify({
             "success": True,
             "has_active_key": False,
@@ -306,7 +306,7 @@ def check_user_status():
             "message": "Verification completed. Ready to generate key."
         })
     else:
-        # Necesita Linkvertise
+        
         return jsonify({
             "success": True,
             "has_active_key": False,
@@ -323,7 +323,7 @@ def generate_key_endpoint():
     ip = get_real_ip()
     current_time = time.time()
     
-    # 1. Verificar si ya tiene key activa
+    
     active_key = get_user_active_key(user_id)
     if active_key and current_time < active_key.get("expires", 0):
         remaining = active_key.get("expires", 0) - current_time
@@ -346,7 +346,7 @@ def generate_key_endpoint():
             "message": f"You already have an active key for {hours}h {minutes}m"
         })
     
-    # 2. Verificar si completó Linkvertise recientemente (últimos 5 minutos)
+    
     has_valid_linkvertise = False
     try:
         with open(LINKVERTISE_FILE, "r") as f:
@@ -356,7 +356,7 @@ def generate_key_endpoint():
     
     for link_id, link_info in linkvertise_data.items():
         if link_info.get("user_id") == user_id:
-            if current_time - link_info.get("timestamp", 0) < 300:  # 5 minutos
+            if current_time - link_info.get("timestamp", 0) < 300:  
                 has_valid_linkvertise = True
                 break
     
@@ -368,7 +368,7 @@ def generate_key_endpoint():
             "linkvertise_url": LINKVERTISE_URL
         }), 403
     
-    # 3. Generar NUEVA key
+    
     key = generate_key()
     expires_at = current_time + COOLDOWN
     
@@ -388,7 +388,7 @@ def generate_key_endpoint():
     
     save_key(key_data)
     
-    # Marcar Linkvertise como usado para ESTA key
+    
     mark_linkvertise_completed(user_id, key)
     
     return jsonify({
@@ -432,13 +432,13 @@ def check_key(key):
                     "key": key
                 })
             
-            # Key válida
+            
             time_left = expires_at - current_time
             hours_left = int(time_left / 3600)
             minutes_left = int((time_left % 3600) / 60)
             seconds_left = int(time_left % 60)
             
-            # Verificar Linkvertise para esta key
+            
             user_id = info.get("user_id")
             has_linkvertise = check_linkvertise_for_user_key(user_id, key)
             
@@ -498,12 +498,12 @@ def verify_roblox():
     for ip, info in keys_data.items():
         if info.get("key") == key:
             if current_time < info.get("expires", 0):
-                # Verificar Linkvertise
+                
                 user_id = info.get("user_id")
                 if not check_linkvertise_for_user_key(user_id, key):
                     return jsonify({"success": False, "error": "Verification required"}), 403
                 
-                # Incrementar usos
+                
                 current_uses = info.get("roblox_uses", 0)
                 info["roblox_uses"] = current_uses + 1
                 info["used_in_roblox"] = True

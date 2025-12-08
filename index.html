@@ -287,7 +287,7 @@
     <script>
         const API_URL = window.location.origin;
         const SCREEN1_DURATION = 5000;
-        const DISCORD_LINK = "https://discord.gg/your-discord";
+        const DISCORD_LINK = "https://discord.gg/3EG2GnFEjv";
         const TUTORIAL_LINK = "https://youtube.com/your-tutorial";
         const WEBSITE_URL = "https://genesishub-v2.onrender.com";
         const LINKVERTISE_URL = "https://link-hub.net/1457789/3pNxakfWICZQ";
@@ -298,7 +298,7 @@
         let currentKeyData = null;
         let userStatus = null;
         
-        // ========== SISTEMA DE ALMACENAMIENTO ==========
+        
         function saveUserData(keyData, status) {
             const userData = {
                 key: keyData?.key,
@@ -334,7 +334,7 @@
             localStorage.removeItem('genesis_last_key');
         }
         
-        // ========== FUNCIONES PRINCIPALES ==========
+        
         async function checkUserStatus() {
             try {
                 const response = await fetch(`${API_URL}/check-user-status`);
@@ -381,7 +381,7 @@
                 return;
             }
             
-            // Mostrar key activa
+            
             if (keyElement) keyElement.textContent = keyData.key;
             if (loading) loading.style.display = 'none';
             if (resultDiv) resultDiv.style.display = 'block';
@@ -389,7 +389,7 @@
             
             if (screenLabel) screenLabel.textContent = "YOUR ACTIVE KEY";
             
-             // Configurar información de expiración
+             
             if (keyData.time_left) {
                 currentKeyData = keyData;
                 saveUserData(keyData, userStatus);
@@ -397,12 +397,12 @@
                 startCountdown(keyData.time_left.total_seconds);
             }
             
-            // Mostrar botón para nueva key si no tiene key activa
+            
             if (newKeyBtn) {
                 newKeyBtn.style.display = userStatus?.has_active_key ? 'none' : 'flex';
             }
             
-            // Mostrar aviso de verificación
+            
             if (verificationNotice) {
                 verificationNotice.style.display = userStatus?.requires_linkvertise ? 'block' : 'none';
             }
@@ -439,12 +439,12 @@
                     keyInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> KEY EXPIRED`;
                     keyInfo.style.color = '#ff3300';
                     
-                    // Mostrar pantalla de key expirada
+                   
                     setTimeout(() => {
                         showKeyScreen(null, true);
                     }, 1000);
                     
-                    // Limpiar datos locales
+                    
                     clearUserData();
                 } else {
                     const hours = Math.floor(timeLeft / 3600);
@@ -484,10 +484,10 @@
                         is_valid: true
                     };
                     
-                    // Actualizar estado del usuario
+                    
                     await checkUserStatus();
                     
-                    // Mostrar nueva key
+                   
                     showKeyScreen(keyData);
                     
                     if (status) {
@@ -582,12 +582,12 @@
             }, 3000);
         }
         
-        // ========== INICIALIZACIÓN ==========
+        
         document.addEventListener('DOMContentLoaded', function() {
             initParticles();
             setupEventListeners();
             
-            // Cambiar a pantalla principal después del intro
+            
             setTimeout(() => {
                 changeScreen(2);
             }, SCREEN1_DURATION);
@@ -644,51 +644,51 @@
         }
         
         function setupEventListeners() {
-            // Botón CREATE YOUR KEY
+            
             document.getElementById('createKeyBtn').addEventListener('click', async () => {
                 changeScreen(3);
                 await handleKeyCreation();
             });
             
-            // Botón TUTORIAL
+            
             document.getElementById('tutorialBtn').addEventListener('click', () => {
                 window.open(TUTORIAL_LINK, '_blank');
             });
             
-            // Botón DISCORD
+            
             document.getElementById('discordBtn').addEventListener('click', () => {
                 window.open(DISCORD_LINK, '_blank');
             });
             
-            // Footer link
+            
             document.getElementById('footerLink').addEventListener('click', () => {
                 window.open(WEBSITE_URL, '_blank');
             });
             
-            // Botón COPY KEY
+            
             document.getElementById('copyKeyBtn').addEventListener('click', copyKey);
             
-            // Botón NEW KEY (cuando no tiene key activa)
+            
             document.getElementById('newKeyBtn').addEventListener('click', async () => {
                 await handleKeyCreation();
             });
             
-            // Botón GET NEW KEY (cuando key expiró)
+            
             document.getElementById('getNewKeyBtn').addEventListener('click', async () => {
                 await handleKeyCreation();
             });
             
-            // Botón BACK
+            
             document.getElementById('backToMenuBtn').addEventListener('click', () => {
                 changeScreen(2);
             });
             
-            // Modal Linkvertise
+            
             document.getElementById('openLinkvertiseBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 window.open(LINKVERTISE_URL, '_blank');
                 
-                // Verificar cada 3 segundos si completó la verificación
+                
                 const checkInterval = setInterval(async () => {
                     try {
                         const status = await checkUserStatus();
@@ -696,7 +696,7 @@
                             clearInterval(checkInterval);
                             hideLinkvertiseModal();
                             
-                            // Intentar generar key automáticamente
+                            
                             const success = await generateNewKey();
                             if (!success) {
                                 showStatus('Verification completed. Click "Get New Key"', 'info');
@@ -717,7 +717,7 @@
         async function handleKeyCreation() {
             showLoading("Checking your status...");
             
-            // 1. Verificar estado actual
+            
             const status = await checkUserStatus();
             
             if (!status) {
@@ -725,7 +725,7 @@
                 return;
             }
             
-            // 2. Si ya tiene key activa, mostrarla
+            
             if (status.has_active_key) {
                 const keyData = {
                     key: status.key,
@@ -738,19 +738,19 @@
                 return;
             }
             
-            // 3. Si necesita Linkvertise
+            
             if (status.requires_linkvertise) {
                 showLinkvertiseModal();
                 return;
             }
             
-            // 4. Si puede generar key (acaba de completar Linkvertise)
+            
             if (status.can_generate_key) {
                 await generateNewKey();
                 return;
             }
             
-            // 5. Estado desconocido
+            
             showStatus('Ready to generate new key', 'info');
             document.getElementById('newKeyBtn').style.display = 'flex';
         }
@@ -765,7 +765,7 @@
                 targetScreen.classList.remove('hidden');
             }
             
-            // Si es la pantalla de key, verificar estado
+            
             if (screenNumber === 3) {
                 // Verificar datos guardados primero
                 const savedData = getSavedUserData();
