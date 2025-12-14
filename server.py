@@ -1,5 +1,4 @@
 
-
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import os, json, time, random, string, hashlib
@@ -119,6 +118,8 @@ def save_user_key(user_id, key_data):
     
     with open(USER_KEYS_FILE, "w") as f:
         json.dump(user_keys, f, indent=2)
+    
+    save_key_to_global(key_data)
     
     return True
 
@@ -358,7 +359,6 @@ def generate_key_endpoint():
     }
     
     save_user_key(user_id, key_data)
-    save_key_to_global(key_data)
     
     mark_linkvertise_completed(user_id, key)
     
@@ -390,8 +390,18 @@ def check_key(key):
     
     current_time = time.time()
     
-    if key in data:
-        info = data[key]
+    
+    normalized_input = key.upper()
+    
+    
+    stored_key = None
+    for stored_key_name in data.keys():
+        if stored_key_name.upper() == normalized_input:
+            stored_key = stored_key_name
+            break
+    
+    if stored_key:
+        info = data[stored_key]
         expired = current_time >= info.get("expires", 0)
         expires_at = info.get("expires", 0)
         
@@ -400,7 +410,7 @@ def check_key(key):
                 "exists": True,
                 "expired": True,
                 "message": "Key expired (24h)",
-                "key": key
+                "key": stored_key
             })
         
         time_left = expires_at - current_time
@@ -417,7 +427,7 @@ def check_key(key):
                 "expired": False,
                 "invalid_linkvertise": True,
                 "message": "Key requires verification",
-                "key": key
+                "key": stored_key
             })
         
         roblox_uses = info.get("roblox_uses", 0)
@@ -431,7 +441,7 @@ def check_key(key):
             "roblox_uses": roblox_uses,
             "max_roblox_uses": max_roblox_uses,
             "can_use_in_roblox": roblox_uses < max_roblox_uses,
-            "key": key,
+            "key": stored_key,
             "expires_at": info.get("expires_at_formatted", ""),
             "time_left": {
                 "total_seconds": time_left,
@@ -464,8 +474,18 @@ def verify_roblox():
     
     current_time = time.time()
     
-    if key in keys_data:
-        info = keys_data[key]
+    
+    normalized_input = key.upper()
+    actual_key = None
+    
+    
+    for stored_key in keys_data.keys():
+        if stored_key.upper() == normalized_input:
+            actual_key = stored_key
+            break
+    
+    if actual_key and actual_key in keys_data:
+        info = keys_data[actual_key]
         if current_time < info.get("expires", 0):
             user_id = info.get("user_id")
             if not check_linkvertise_for_user(user_id):
@@ -490,67 +510,15 @@ def verify_roblox():
     
     return jsonify({"success": False, "error": "Invalid key"}), 404
 
-@app.route("/api/save-verification-status", methods=["POST"])
-def save_verification_status():
-    data = request.json
-    user_id = data.get('user_id')
-    key = data.get('key')
-    expires_at = data.get('expires_at')
-    
-    if not user_id or not key:
-        return jsonify({"success": False, "error": "Missing data"}), 400
-    
-    try:
-        with open("roblox_verifications.json", "r") as f:
-            verifications = json.load(f)
-    except:
-        verifications = {}
-    
-    verifications[user_id] = {
-        "key": key,
-        "verified": True,
-        "verified_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "expires_at": expires_at,
-        "user_id": user_id
-    }
-    
-    with open("roblox_verifications.json", "w") as f:
-        json.dump(verifications, f, indent=2)
-    
-    return jsonify({"success": True, "message": "Verification status saved"})
-
-@app.route("/api/check-verification/<user_id>", methods=["GET"])
-def check_verification(user_id):
-    try:
-        with open("roblox_verifications.json", "r") as f:
-            verifications = json.load(f)
-    except:
-        return jsonify({"verified": False})
-    
-    if user_id in verifications:
-        verification = verifications[user_id]
-        expires_at = verification.get("expires_at")
-        
-        if expires_at:
-            expires_time = datetime.strptime(expires_at, '%Y-%m-%d %H:%M:%S').timestamp()
-            if time.time() < expires_time:
-                return jsonify({
-                    "verified": True,
-                    "key": verification.get("key"),
-                    "expires_at": expires_at
-                })
-    
-    return jsonify({"verified": False})
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
     print("🚀 Genesis Hub V2 - Sistema Definitivo")
     print("📌 SISTEMA MEJORADO:")
-    print("   1. 1 usuario = 1 Key persistente (24h)")
-    print("   2. Key se guarda en localStorage del navegador")
-    print("   3. Key se guarda por user_id único en servidor")
+    print("   1. Verificación de claves que no distingue entre mayúsculas y minúsculas")
+    print("   2. Bloqueo de claves inventadas")
+    print("   3. 1 usuario = 1 Key persistente (24h)")
     print("   4. UI de Roblox solo aparece si no hay verificación activa")
-    print("   5. Datos se limpian automáticamente al expirar")
     print(f"🌐 URL: {YOUR_WEBSITE}")
     print(f"🔗 Linkvertise: {LINKVERTISE_URL}")
     app.run(host="0.0.0.0", port=port, debug=False)
+
