@@ -160,7 +160,7 @@
     
     <div id="screen1" class="screen">
         <h1 class="main-title">GENESIS HUB V2</h1>
-        <h2 class="subtitle">Made by Jesús and Alejandro</h2>
+        <h2 class="subtitle">Made by Jesus and Alejandro</h2>
         
         <div class="discord-profiles">
             <div class="profile">
@@ -300,25 +300,58 @@
         let userId = null;
         
         function generateUserId() {
-            const navigatorData = JSON.stringify({
-                userAgent: navigator.userAgent,
-                language: navigator.language,
-                platform: navigator.platform,
-                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
-                deviceMemory: navigator.deviceMemory || 'unknown'
-            });
-            
-            const timeData = new Date().getTimezoneOffset().toString();
-            
-            let uniqueString = navigatorData + timeData + Math.random().toString(36).substring(2);
-            
-            const hash = btoa(encodeURIComponent(uniqueString)).substring(0, 32);
-            
-            if (!localStorage.getItem('genesis_user_id')) {
-                localStorage.setItem('genesis_user_id', hash);
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
             }
             
-            return localStorage.getItem('genesis_user_id');
+            let userId = getCookie('genesis_user_id');
+            
+            if (!userId) {
+                userId = localStorage.getItem('genesis_user_id');
+            }
+            
+            if (!userId) {
+                const navigatorData = {
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                    hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
+                    deviceMemory: navigator.deviceMemory || 'unknown',
+                    screenWidth: screen.width,
+                    screenHeight: screen.height,
+                    timezone: new Date().getTimezoneOffset()
+                };
+                
+                const dataStr = JSON.stringify(navigatorData);
+                const timestamp = Date.now().toString();
+                const randomStr = Math.random().toString(36).substring(2, 15);
+                
+                const combined = dataStr + timestamp + randomStr;
+                
+                let hash = 0;
+                for (let i = 0; i < combined.length; i++) {
+                    const char = combined.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                
+                userId = 'user_' + Math.abs(hash).toString(16).substring(0, 12);
+                
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (30 * 24 * 60 * 60 * 1000));
+                document.cookie = `genesis_user_id=${userId}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+                
+                localStorage.setItem('genesis_user_id', userId);
+            } else {
+                if (!localStorage.getItem('genesis_user_id')) {
+                    localStorage.setItem('genesis_user_id', userId);
+                }
+            }
+            
+            return userId;
         }
         
         function saveUserData(keyData, status) {
@@ -335,26 +368,89 @@
             };
             
             localStorage.setItem('genesis_hub_user', JSON.stringify(userData));
+            
+            sessionStorage.setItem('genesis_hub_user', JSON.stringify(userData));
+            
+            if (keyData?.key) {
+                localStorage.setItem('genesis_last_key', keyData.key);
+                
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (30 * 24 * 60 * 60 * 1000));
+                document.cookie = `genesis_key=${keyData.key}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+            }
+            
             return true;
         }
         
         function getSavedUserData() {
+            let userData = null;
+            
             try {
                 const saved = localStorage.getItem('genesis_hub_user');
-                if (!saved) return null;
-                
-                const data = JSON.parse(saved);
-                userId = data.user_id || generateUserId();
-                
-                return data;
+                if (saved) {
+                    userData = JSON.parse(saved);
+                    
+                    if (userData.expires_at) {
+                        const expires = new Date(userData.expires_at).getTime();
+                        const now = Date.now();
+                        
+                        if (now < expires) {
+                            userId = userData.user_id || generateUserId();
+                            return userData;
+                        } else {
+                            clearUserData();
+                            return null;
+                        }
+                    }
+                }
             } catch (error) {
-                console.error('Error reading user data:', error);
+                console.error('Error:', error);
             }
-            return null;
+            
+            if (!userData) {
+                try {
+                    const sessionSaved = sessionStorage.getItem('genesis_hub_user');
+                    if (sessionSaved) {
+                        userData = JSON.parse(sessionSaved);
+                        localStorage.setItem('genesis_hub_user', sessionSaved);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+            
+            if (!userData) {
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                    return null;
+                }
+                
+                const cookieKey = getCookie('genesis_key');
+                const cookieUserId = getCookie('genesis_user_id');
+                
+                if (cookieKey && cookieUserId) {
+                    userData = {
+                        user_id: cookieUserId,
+                        key: cookieKey,
+                        last_update: Date.now()
+                    };
+                    
+                    localStorage.setItem('genesis_hub_user', JSON.stringify(userData));
+                }
+            }
+            
+            return userData;
         }
         
         function clearUserData() {
             localStorage.removeItem('genesis_hub_user');
+            localStorage.removeItem('genesis_last_key');
+            
+            sessionStorage.removeItem('genesis_hub_user');
+            
+            document.cookie = "genesis_key=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         }
         
         async function checkUserStatus() {
@@ -363,7 +459,8 @@
                 
                 const response = await fetch(`${API_URL}/check-user-status`, {
                     headers: {
-                        'X-User-ID': userId
+                        'X-User-ID': userId,
+                        'Cache-Control': 'no-cache'
                     }
                 });
                 
@@ -383,7 +480,7 @@
                     return data;
                 }
             } catch (error) {
-                console.error('Error checking user status:', error);
+                console.error('Error:', error);
             }
             return null;
         }
@@ -540,7 +637,7 @@
                     return false;
                 }
             } catch (error) {
-                console.error('Error generating key:', error);
+                console.error('Error:', error);
                 if (status) {
                     status.textContent = 'Network error. Please try again.';
                     status.style.color = '#ff3300';
@@ -557,7 +654,7 @@
             
             navigator.clipboard.writeText(currentKeyData.key)
                 .then(() => {
-                    showStatus('✅ Key copied to clipboard!', 'success');
+                    showStatus('Key copied to clipboard!', 'success');
                 })
                 .catch(err => {
                     const keyElement = document.getElementById('generatedKey');
@@ -568,7 +665,7 @@
                         textArea.select();
                         document.execCommand('copy');
                         document.body.removeChild(textArea);
-                        showStatus('✅ Key copied to clipboard!', 'success');
+                        showStatus('Key copied to clipboard!', 'success');
                     }
                 });
         }
@@ -619,9 +716,15 @@
             
             userId = generateUserId();
             
-            setTimeout(() => {
-                changeScreen(2);
-            }, SCREEN1_DURATION);
+            const savedData = getSavedUserData();
+            if (savedData && savedData.key) {
+                changeScreen(3);
+                showKeyScreen(savedData);
+            } else {
+                setTimeout(() => {
+                    changeScreen(2);
+                }, SCREEN1_DURATION);
+            }
             
             animateParticles();
         });
@@ -781,7 +884,12 @@
             }
             
             if (screenNumber === 3) {
-                handleKeyCreation();
+                const savedData = getSavedUserData();
+                if (savedData && savedData.key) {
+                    showKeyScreen(savedData);
+                } else {
+                    handleKeyCreation();
+                }
             }
         }
     </script>
