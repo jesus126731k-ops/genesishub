@@ -521,4 +521,3 @@ if __name__ == "__main__":
     print(f"🌐 URL: {YOUR_WEBSITE}")
     print(f"🔗 Linkvertise: {LINKVERTISE_URL}")
     app.run(host="0.0.0.0", port=port, debug=False)
-
