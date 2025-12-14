@@ -335,13 +335,6 @@
             };
             
             localStorage.setItem('genesis_hub_user', JSON.stringify(userData));
-            
-            localStorage.setItem('genesis_last_key', JSON.stringify({
-                key: keyData?.key,
-                expires_at: keyData?.expires_at,
-                timestamp: Date.now()
-            }));
-            
             return true;
         }
         
@@ -351,21 +344,9 @@
                 if (!saved) return null;
                 
                 const data = JSON.parse(saved);
-                
                 userId = data.user_id || generateUserId();
                 
-                // Solo verificar expiración básica aquí
-                if (data.key && data.expires_at) {
-                    const expires = new Date(data.expires_at).getTime();
-                    const now = Date.now();
-                    
-                    // Si parece expirada, limpiar
-                    if (now >= expires) {
-                        clearUserData();
-                        return null;
-                    }
-                    return data;
-                }
+                return data;
             } catch (error) {
                 console.error('Error reading user data:', error);
             }
@@ -374,8 +355,6 @@
         
         function clearUserData() {
             localStorage.removeItem('genesis_hub_user');
-            localStorage.removeItem('genesis_last_key');
-            // NO borrar genesis_user_id para mantener consistencia
         }
         
         async function checkUserStatus() {
@@ -393,7 +372,6 @@
                 if (data.success) {
                     userStatus = data;
                     
-                    // Si el servidor dice que hay una key activa, usarla
                     if (data.has_active_key) {
                         saveUserData({
                             key: data.key,
@@ -641,9 +619,7 @@
             
             userId = generateUserId();
             
-            // Mostrar pantalla 1 por 5 segundos, luego verificar
             setTimeout(() => {
-                // Siempre empezar en pantalla 2, luego verificar si hay key
                 changeScreen(2);
             }, SCREEN1_DURATION);
             
@@ -759,9 +735,6 @@
         }
         
         async function handleKeyCreation() {
-            // LIMPIAR CACHE ANTES DE VERIFICAR
-            clearUserData();
-            
             showLoading("Checking your status...");
             
             const status = await checkUserStatus();
@@ -772,7 +745,6 @@
             }
             
             if (status.has_active_key) {
-                // USAR SIEMPRE LOS DATOS DEL SERVIDOR, NO DEL CACHE
                 const keyData = {
                     key: status.key,
                     expires_at: status.expires_at,
@@ -809,7 +781,6 @@
             }
             
             if (screenNumber === 3) {
-                // Siempre empezar con verificación fresca del servidor
                 handleKeyCreation();
             }
         }
