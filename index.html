@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -297,18 +298,51 @@
         let countdownInterval = null;
         let currentKeyData = null;
         let userStatus = null;
+        let userId = null;
         
+        function generateUserId() {
+            const navigatorData = JSON.stringify({
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
+                deviceMemory: navigator.deviceMemory || 'unknown'
+            });
+            
+            const timeData = new Date().getTimezoneOffset().toString();
+            
+            let uniqueString = navigatorData + timeData + Math.random().toString(36).substring(2);
+            
+            const hash = btoa(encodeURIComponent(uniqueString)).substring(0, 32);
+            
+            if (!localStorage.getItem('genesis_user_id')) {
+                localStorage.setItem('genesis_user_id', hash);
+            }
+            
+            return localStorage.getItem('genesis_user_id');
+        }
         
         function saveUserData(keyData, status) {
+            userId = userId || generateUserId();
+            
             const userData = {
+                user_id: userId,
                 key: keyData?.key,
                 expires_at: keyData?.expires_at,
                 time_left: keyData?.time_left,
                 last_update: Date.now(),
-                user_status: status
+                user_status: status,
+                is_active: true
             };
             
             localStorage.setItem('genesis_hub_user', JSON.stringify(userData));
+            
+            localStorage.setItem('genesis_last_key', JSON.stringify({
+                key: keyData?.key,
+                expires_at: keyData?.expires_at,
+                timestamp: Date.now()
+            }));
+            
             return true;
         }
         
@@ -319,9 +353,18 @@
                 
                 const data = JSON.parse(saved);
                 
+                userId = data.user_id || generateUserId();
                 
-                if (Date.now() - data.last_update < 300000) {
-                    return data;
+                if (data.key && data.expires_at) {
+                    const expires = new Date(data.expires_at).getTime();
+                    const now = Date.now();
+                    
+                    if (now < expires) {
+                        return data;
+                    } else {
+                        clearUserData();
+                        return null;
+                    }
                 }
             } catch (error) {
                 console.error('Error reading user data:', error);
@@ -334,14 +377,29 @@
             localStorage.removeItem('genesis_last_key');
         }
         
-        
         async function checkUserStatus() {
             try {
-                const response = await fetch(`${API_URL}/check-user-status`);
+                userId = userId || generateUserId();
+                
+                const response = await fetch(`${API_URL}/check-user-status`, {
+                    headers: {
+                        'X-User-ID': userId
+                    }
+                });
+                
                 const data = await response.json();
                 
                 if (data.success) {
                     userStatus = data;
+                    
+                    if (data.has_active_key) {
+                        saveUserData({
+                            key: data.key,
+                            expires_at: data.expires_at,
+                            time_left: data.time_left
+                        }, data);
+                    }
+                    
                     return data;
                 }
             } catch (error) {
@@ -373,14 +431,12 @@
             const verificationNotice = document.getElementById('verificationNotice');
             
             if (isExpired) {
-                
                 if (loading) loading.style.display = 'none';
                 if (resultDiv) resultDiv.style.display = 'none';
                 if (expiredMsg) expiredMsg.style.display = 'block';
                 if (screenLabel) screenLabel.textContent = "KEY EXPIRED";
                 return;
             }
-            
             
             if (keyElement) keyElement.textContent = keyData.key;
             if (loading) loading.style.display = 'none';
@@ -389,7 +445,6 @@
             
             if (screenLabel) screenLabel.textContent = "YOUR ACTIVE KEY";
             
-             
             if (keyData.time_left) {
                 currentKeyData = keyData;
                 saveUserData(keyData, userStatus);
@@ -397,11 +452,9 @@
                 startCountdown(keyData.time_left.total_seconds);
             }
             
-            
             if (newKeyBtn) {
                 newKeyBtn.style.display = userStatus?.has_active_key ? 'none' : 'flex';
             }
-            
             
             if (verificationNotice) {
                 verificationNotice.style.display = userStatus?.requires_linkvertise ? 'block' : 'none';
@@ -439,11 +492,9 @@
                     keyInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> KEY EXPIRED`;
                     keyInfo.style.color = '#ff3300';
                     
-                   
                     setTimeout(() => {
                         showKeyScreen(null, true);
                     }, 1000);
-                    
                     
                     clearUserData();
                 } else {
@@ -467,10 +518,13 @@
             }
             
             try {
+                userId = userId || generateUserId();
+                
                 const response = await fetch(`${API_URL}/generate-key`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-User-ID': userId
                     }
                 });
                 
@@ -484,10 +538,8 @@
                         is_valid: true
                     };
                     
-                    
                     await checkUserStatus();
                     
-                   
                     showKeyScreen(keyData);
                     
                     if (status) {
@@ -528,7 +580,6 @@
                     showStatus('✅ Key copied to clipboard!', 'success');
                 })
                 .catch(err => {
-                    // Fallback
                     const keyElement = document.getElementById('generatedKey');
                     if (keyElement) {
                         const textArea = document.createElement('textarea');
@@ -582,15 +633,21 @@
             }, 3000);
         }
         
-        
         document.addEventListener('DOMContentLoaded', function() {
             initParticles();
             setupEventListeners();
             
+            userId = generateUserId();
             
-            setTimeout(() => {
-                changeScreen(2);
-            }, SCREEN1_DURATION);
+            const savedData = getSavedUserData();
+            if (savedData && savedData.key) {
+                changeScreen(3);
+                showKeyScreen(savedData);
+            } else {
+                setTimeout(() => {
+                    changeScreen(2);
+                }, SCREEN1_DURATION);
+            }
             
             animateParticles();
         });
@@ -644,50 +701,40 @@
         }
         
         function setupEventListeners() {
-            
             document.getElementById('createKeyBtn').addEventListener('click', async () => {
                 changeScreen(3);
                 await handleKeyCreation();
             });
             
-            
             document.getElementById('tutorialBtn').addEventListener('click', () => {
                 window.open(TUTORIAL_LINK, '_blank');
             });
-            
             
             document.getElementById('discordBtn').addEventListener('click', () => {
                 window.open(DISCORD_LINK, '_blank');
             });
             
-            
             document.getElementById('footerLink').addEventListener('click', () => {
                 window.open(WEBSITE_URL, '_blank');
             });
             
-            
             document.getElementById('copyKeyBtn').addEventListener('click', copyKey);
-            
             
             document.getElementById('newKeyBtn').addEventListener('click', async () => {
                 await handleKeyCreation();
             });
             
-            
             document.getElementById('getNewKeyBtn').addEventListener('click', async () => {
                 await handleKeyCreation();
             });
-            
             
             document.getElementById('backToMenuBtn').addEventListener('click', () => {
                 changeScreen(2);
             });
             
-            
             document.getElementById('openLinkvertiseBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 window.open(LINKVERTISE_URL, '_blank');
-                
                 
                 const checkInterval = setInterval(async () => {
                     try {
@@ -695,7 +742,6 @@
                         if (status && !status.requires_linkvertise) {
                             clearInterval(checkInterval);
                             hideLinkvertiseModal();
-                            
                             
                             const success = await generateNewKey();
                             if (!success) {
@@ -717,14 +763,12 @@
         async function handleKeyCreation() {
             showLoading("Checking your status...");
             
-            
             const status = await checkUserStatus();
             
             if (!status) {
                 showStatus('Error connecting to server', 'error');
                 return;
             }
-            
             
             if (status.has_active_key) {
                 const keyData = {
@@ -738,18 +782,15 @@
                 return;
             }
             
-            
             if (status.requires_linkvertise) {
                 showLinkvertiseModal();
                 return;
             }
             
-            
             if (status.can_generate_key) {
                 await generateNewKey();
                 return;
             }
-            
             
             showStatus('Ready to generate new key', 'info');
             document.getElementById('newKeyBtn').style.display = 'flex';
@@ -765,9 +806,7 @@
                 targetScreen.classList.remove('hidden');
             }
             
-            
             if (screenNumber === 3) {
-                
                 const savedData = getSavedUserData();
                 if (savedData && savedData.key) {
                     showKeyScreen(savedData);

@@ -1,4 +1,6 @@
-from flask import Flask, jsonify, request, send_from_directory, redirect
+
+
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import os, json, time, random, string, hashlib
 from datetime import datetime, timedelta
@@ -6,17 +8,16 @@ from datetime import datetime, timedelta
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-
 DATA_FILE = "keys.json"
 LINKVERTISE_FILE = "linkvertise_tracking.json"
-COOLDOWN = 86400  
+USER_KEYS_FILE = "user_keys.json"
+COOLDOWN = 86400
 SECRET = "G3N3SIS_HUB_2025"
 
 LINKVERTISE_URL = "https://link-hub.net/1457789/3pNxakfWICZQ"
 YOUR_WEBSITE = "https://genesishub-v2.onrender.com"
 
-
-for file in [DATA_FILE, LINKVERTISE_FILE]:
+for file in [DATA_FILE, LINKVERTISE_FILE, USER_KEYS_FILE]:
     if not os.path.exists(file):
         with open(file, "w") as f:
             json.dump({}, f)
@@ -31,10 +32,19 @@ def get_real_ip():
             return ip
     return request.remote_addr
 
-def get_unique_user_id():
+def get_user_id():
+    user_id_header = request.headers.get('X-User-ID')
+    if user_id_header and len(user_id_header) >= 16:
+        return user_id_header
+    
     ip = get_real_ip()
     user_agent = request.headers.get('User-Agent', '')
-    return hashlib.md5(f"{ip}{user_agent[:50]}".encode()).hexdigest()
+    browser_info = request.headers.get('Accept-Language', '')
+    
+    combined = f"{ip}{user_agent[:100]}{browser_info}"
+    user_id = hashlib.sha256(combined.encode()).hexdigest()[:32]
+    
+    return user_id
 
 def generate_key():
     key_parts = []
@@ -66,65 +76,62 @@ def mark_linkvertise_completed(user_id, for_key=None):
         json.dump(data, f, indent=2)
     return True
 
-def check_linkvertise_for_user_key(user_id, key=None):
+def check_linkvertise_for_user(user_id):
     try:
         with open(LINKVERTISE_FILE, "r") as f:
             data = json.load(f)
     except:
         return False
     
+    current_time = time.time()
     
-    if key:
-        linkvertise_id = f"{user_id}_{key}"
-        if linkvertise_id in data:
-            linkvertise_data = data[linkvertise_id]
-            
-            if time.time() - linkvertise_data.get("timestamp", 0) < COOLDOWN:
-                return linkvertise_data.get("completed", False)
-    
-    
-    if user_id in data:
-        user_data = data[user_id]
-        if time.time() - user_data.get("timestamp", 0) < COOLDOWN:
-            return user_data.get("completed", False)
+    for link_id, link_info in data.items():
+        if link_info.get("user_id") == user_id:
+            if current_time - link_info.get("timestamp", 0) < COOLDOWN:
+                return True
     
     return False
 
 def get_user_active_key(user_id):
     try:
-        with open(DATA_FILE, "r") as f:
-            data = json.load(f)
+        with open(USER_KEYS_FILE, "r") as f:
+            user_keys = json.load(f)
     except:
-        return None
+        user_keys = {}
     
-    current_time = time.time()
-    
-    
-    user_keys = []
-    for key_data in data.values():
-        if key_data.get("user_id") == user_id:
-            user_keys.append(key_data)
-    
-    
-    user_keys.sort(key=lambda x: x.get("created", ""), reverse=True)
-    
-    
-    for key_data in user_keys:
+    if user_id in user_keys:
+        key_data = user_keys[user_id]
+        current_time = time.time()
+        
         if current_time < key_data.get("expires", 0):
             return key_data
     
     return None
 
-def save_key(key_data):
+def save_user_key(user_id, key_data):
+    try:
+        with open(USER_KEYS_FILE, "r") as f:
+            user_keys = json.load(f)
+    except:
+        user_keys = {}
+    
+    user_keys[user_id] = key_data
+    
+    with open(USER_KEYS_FILE, "w") as f:
+        json.dump(user_keys, f, indent=2)
+    
+    return True
+
+def save_key_to_global(key_data):
     try:
         with open(DATA_FILE, "r") as f:
             data = json.load(f)
     except:
         data = {}
     
-    
-    ip = key_data.get("ip") or get_real_ip()
-    data[ip] = key_data
+    key = key_data.get("key")
+    if key:
+        data[key] = key_data
     
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=2)
@@ -132,6 +139,8 @@ def save_key(key_data):
     return True
 
 def clean_expired_data():
+    current_time = time.time()
+    
     try:
         with open(DATA_FILE, "r") as f:
             keys_data = json.load(f)
@@ -144,20 +153,26 @@ def clean_expired_data():
     except:
         linkvertise_data = {}
     
-    current_time = time.time()
-    
+    try:
+        with open(USER_KEYS_FILE, "r") as f:
+            user_keys_data = json.load(f)
+    except:
+        user_keys_data = {}
     
     cleaned_keys = {}
-    for ip, key_info in keys_data.items():
+    for key, key_info in keys_data.items():
         if current_time < key_info.get("expires", 0):
-            cleaned_keys[ip] = key_info
-    
+            cleaned_keys[key] = key_info
     
     cleaned_linkvertise = {}
     for link_id, link_info in linkvertise_data.items():
         if current_time - link_info.get("timestamp", 0) < COOLDOWN:
             cleaned_linkvertise[link_id] = link_info
     
+    cleaned_user_keys = {}
+    for user_id, key_data in user_keys_data.items():
+        if current_time < key_data.get("expires", 0):
+            cleaned_user_keys[user_id] = key_data
     
     with open(DATA_FILE, "w") as f:
         json.dump(cleaned_keys, f, indent=2)
@@ -165,12 +180,14 @@ def clean_expired_data():
     with open(LINKVERTISE_FILE, "w") as f:
         json.dump(cleaned_linkvertise, f, indent=2)
     
+    with open(USER_KEYS_FILE, "w") as f:
+        json.dump(cleaned_user_keys, f, indent=2)
+    
     expired_keys = len(keys_data) - len(cleaned_keys)
     expired_links = len(linkvertise_data) - len(cleaned_linkvertise)
+    expired_users = len(user_keys_data) - len(cleaned_user_keys)
     
-    return expired_keys, expired_links
-
-
+    return expired_keys, expired_links, expired_users
 
 @app.route("/")
 def index():
@@ -182,23 +199,9 @@ def static_files(filename):
 
 @app.route("/linkvertise-success")
 def linkvertise_success():
-    user_id = get_unique_user_id()
+    user_id = get_user_id()
     
-    
-    try:
-        with open(DATA_FILE, "r") as f:
-            keys_data = json.load(f)
-    except:
-        keys_data = {}
-    
-    pending_key = None
-    for key_data in keys_data.values():
-        if key_data.get("user_id") == user_id and key_data.get("pending_linkvertise", False):
-            pending_key = key_data.get("key")
-            break
-    
-    
-    mark_linkvertise_completed(user_id, pending_key)
+    mark_linkvertise_completed(user_id)
     
     return f'''
     <!DOCTYPE html>
@@ -254,14 +257,12 @@ def linkvertise_success():
 def check_user_status():
     clean_expired_data()
     
-    user_id = get_unique_user_id()
+    user_id = get_user_id()
     current_time = time.time()
-    
     
     active_key = get_user_active_key(user_id)
     
     if active_key:
-        
         remaining = active_key.get("expires", 0) - current_time
         
         if remaining > 0:
@@ -280,24 +281,9 @@ def check_user_status():
                 "message": f"You have an active key for {int(remaining/3600)}h {int((remaining%3600)/60)}m"
             })
     
+    has_valid_linkvertise = check_linkvertise_for_user(user_id)
     
-    
-    has_recent_linkvertise = False
-    try:
-        with open(LINKVERTISE_FILE, "r") as f:
-            linkvertise_data = json.load(f)
-    except:
-        linkvertise_data = {}
-    
-    
-    for link_id, link_info in linkvertise_data.items():
-        if link_info.get("user_id") == user_id:
-            if current_time - link_info.get("timestamp", 0) < 300:  
-                has_recent_linkvertise = True
-                break
-    
-    if has_recent_linkvertise:
-        
+    if has_valid_linkvertise:
         return jsonify({
             "success": True,
             "has_active_key": False,
@@ -306,7 +292,6 @@ def check_user_status():
             "message": "Verification completed. Ready to generate key."
         })
     else:
-        
         return jsonify({
             "success": True,
             "has_active_key": False,
@@ -319,10 +304,9 @@ def check_user_status():
 def generate_key_endpoint():
     clean_expired_data()
     
-    user_id = get_unique_user_id()
+    user_id = get_user_id()
     ip = get_real_ip()
     current_time = time.time()
-    
     
     active_key = get_user_active_key(user_id)
     if active_key and current_time < active_key.get("expires", 0):
@@ -346,19 +330,7 @@ def generate_key_endpoint():
             "message": f"You already have an active key for {hours}h {minutes}m"
         })
     
-    
-    has_valid_linkvertise = False
-    try:
-        with open(LINKVERTISE_FILE, "r") as f:
-            linkvertise_data = json.load(f)
-    except:
-        linkvertise_data = {}
-    
-    for link_id, link_info in linkvertise_data.items():
-        if link_info.get("user_id") == user_id:
-            if current_time - link_info.get("timestamp", 0) < 300:  
-                has_valid_linkvertise = True
-                break
+    has_valid_linkvertise = check_linkvertise_for_user(user_id)
     
     if not has_valid_linkvertise:
         return jsonify({
@@ -367,7 +339,6 @@ def generate_key_endpoint():
             "message": "Complete verification first",
             "linkvertise_url": LINKVERTISE_URL
         }), 403
-    
     
     key = generate_key()
     expires_at = current_time + COOLDOWN
@@ -386,8 +357,8 @@ def generate_key_endpoint():
         "linkvertise_completed": True
     }
     
-    save_key(key_data)
-    
+    save_user_key(user_id, key_data)
+    save_key_to_global(key_data)
     
     mark_linkvertise_completed(user_id, key)
     
@@ -419,59 +390,57 @@ def check_key(key):
     
     current_time = time.time()
     
-    for info in data.values():
-        if info.get("key") == key:
-            expired = current_time >= info.get("expires", 0)
-            expires_at = info.get("expires", 0)
-            
-            if expired:
-                return jsonify({
-                    "exists": True,
-                    "expired": True,
-                    "message": "Key expired (24h)",
-                    "key": key
-                })
-            
-            
-            time_left = expires_at - current_time
-            hours_left = int(time_left / 3600)
-            minutes_left = int((time_left % 3600) / 60)
-            seconds_left = int(time_left % 60)
-            
-            
-            user_id = info.get("user_id")
-            has_linkvertise = check_linkvertise_for_user_key(user_id, key)
-            
-            if not has_linkvertise:
-                return jsonify({
-                    "exists": True,
-                    "expired": False,
-                    "invalid_linkvertise": True,
-                    "message": "Key requires verification",
-                    "key": key
-                })
-            
-            roblox_uses = info.get("roblox_uses", 0)
-            max_roblox_uses = info.get("max_roblox_uses", 99999)
-            
+    if key in data:
+        info = data[key]
+        expired = current_time >= info.get("expires", 0)
+        expires_at = info.get("expires", 0)
+        
+        if expired:
+            return jsonify({
+                "exists": True,
+                "expired": True,
+                "message": "Key expired (24h)",
+                "key": key
+            })
+        
+        time_left = expires_at - current_time
+        hours_left = int(time_left / 3600)
+        minutes_left = int((time_left % 3600) / 60)
+        seconds_left = int(time_left % 60)
+        
+        user_id = info.get("user_id")
+        has_linkvertise = check_linkvertise_for_user(user_id)
+        
+        if not has_linkvertise:
             return jsonify({
                 "exists": True,
                 "expired": False,
-                "created": info.get("created"),
-                "used_in_roblox": info.get("used_in_roblox", False),
-                "roblox_uses": roblox_uses,
-                "max_roblox_uses": max_roblox_uses,
-                "can_use_in_roblox": roblox_uses < max_roblox_uses,
-                "key": key,
-                "expires_at": info.get("expires_at_formatted", ""),
-                "time_left": {
-                    "total_seconds": time_left,
-                    "hours": hours_left,
-                    "minutes": minutes_left,
-                    "seconds": seconds_left
-                },
-                "message": "Key valid"
+                "invalid_linkvertise": True,
+                "message": "Key requires verification",
+                "key": key
             })
+        
+        roblox_uses = info.get("roblox_uses", 0)
+        max_roblox_uses = info.get("max_roblox_uses", 99999)
+        
+        return jsonify({
+            "exists": True,
+            "expired": False,
+            "created": info.get("created"),
+            "used_in_roblox": info.get("used_in_roblox", False),
+            "roblox_uses": roblox_uses,
+            "max_roblox_uses": max_roblox_uses,
+            "can_use_in_roblox": roblox_uses < max_roblox_uses,
+            "key": key,
+            "expires_at": info.get("expires_at_formatted", ""),
+            "time_left": {
+                "total_seconds": time_left,
+                "hours": hours_left,
+                "minutes": minutes_left,
+                "seconds": seconds_left
+            },
+            "message": "Key valid"
+        })
     
     return jsonify({
         "exists": False,
@@ -495,42 +464,93 @@ def verify_roblox():
     
     current_time = time.time()
     
-    for ip, info in keys_data.items():
-        if info.get("key") == key:
-            if current_time < info.get("expires", 0):
-                
-                user_id = info.get("user_id")
-                if not check_linkvertise_for_user_key(user_id, key):
-                    return jsonify({"success": False, "error": "Verification required"}), 403
-                
-                
-                current_uses = info.get("roblox_uses", 0)
-                info["roblox_uses"] = current_uses + 1
-                info["used_in_roblox"] = True
-                info["last_roblox_use"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                
-                with open(DATA_FILE, "w") as f:
-                    json.dump(keys_data, f, indent=2)
-                
-                return jsonify({
-                    "success": True, 
-                    "valid": True, 
-                    "uses_left": 99999 - (current_uses + 1),
-                    "message": "Key verified successfully"
-                })
-            else:
-                return jsonify({"success": False, "error": "Key expired"}), 410
+    if key in keys_data:
+        info = keys_data[key]
+        if current_time < info.get("expires", 0):
+            user_id = info.get("user_id")
+            if not check_linkvertise_for_user(user_id):
+                return jsonify({"success": False, "error": "Verification required"}), 403
+            
+            current_uses = info.get("roblox_uses", 0)
+            info["roblox_uses"] = current_uses + 1
+            info["used_in_roblox"] = True
+            info["last_roblox_use"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            with open(DATA_FILE, "w") as f:
+                json.dump(keys_data, f, indent=2)
+            
+            return jsonify({
+                "success": True, 
+                "valid": True, 
+                "uses_left": 99999 - (current_uses + 1),
+                "message": "Key verified successfully"
+            })
+        else:
+            return jsonify({"success": False, "error": "Key expired"}), 410
     
     return jsonify({"success": False, "error": "Invalid key"}), 404
+
+@app.route("/api/save-verification-status", methods=["POST"])
+def save_verification_status():
+    data = request.json
+    user_id = data.get('user_id')
+    key = data.get('key')
+    expires_at = data.get('expires_at')
+    
+    if not user_id or not key:
+        return jsonify({"success": False, "error": "Missing data"}), 400
+    
+    try:
+        with open("roblox_verifications.json", "r") as f:
+            verifications = json.load(f)
+    except:
+        verifications = {}
+    
+    verifications[user_id] = {
+        "key": key,
+        "verified": True,
+        "verified_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "expires_at": expires_at,
+        "user_id": user_id
+    }
+    
+    with open("roblox_verifications.json", "w") as f:
+        json.dump(verifications, f, indent=2)
+    
+    return jsonify({"success": True, "message": "Verification status saved"})
+
+@app.route("/api/check-verification/<user_id>", methods=["GET"])
+def check_verification(user_id):
+    try:
+        with open("roblox_verifications.json", "r") as f:
+            verifications = json.load(f)
+    except:
+        return jsonify({"verified": False})
+    
+    if user_id in verifications:
+        verification = verifications[user_id]
+        expires_at = verification.get("expires_at")
+        
+        if expires_at:
+            expires_time = datetime.strptime(expires_at, '%Y-%m-%d %H:%M:%S').timestamp()
+            if time.time() < expires_time:
+                return jsonify({
+                    "verified": True,
+                    "key": verification.get("key"),
+                    "expires_at": expires_at
+                })
+    
+    return jsonify({"verified": False})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
     print("🚀 Genesis Hub V2 - Sistema Definitivo")
-    print("📌 REGLAS:")
-    print("   1. 1 Linkvertise = 1 Key (24h)")
-    print("   2. Key expira = Nuevo Linkvertise obligatorio")
-    print("   3. 1 Key activa por usuario")
-    print("   4. Roblox: Usos ilimitados mientras key esté activa")
+    print("📌 SISTEMA MEJORADO:")
+    print("   1. 1 usuario = 1 Key persistente (24h)")
+    print("   2. Key se guarda en localStorage del navegador")
+    print("   3. Key se guarda por user_id único en servidor")
+    print("   4. UI de Roblox solo aparece si no hay verificación activa")
+    print("   5. Datos se limpian automáticamente al expirar")
     print(f"🌐 URL: {YOUR_WEBSITE}")
     print(f"🔗 Linkvertise: {LINKVERTISE_URL}")
     app.run(host="0.0.0.0", port=port, debug=False)
