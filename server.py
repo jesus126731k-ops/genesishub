@@ -1,7 +1,7 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, make_response
 from flask_cors import CORS
 import os, json, time, random, string, hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
@@ -19,19 +19,36 @@ for file in [KEYS_FILE, LINKVERTISE_FILE]:
             json.dump({}, f)
 
 def get_user_id():
-    user_id_cookie = request.cookies.get('genesis_user_id')
+    cookie_name = 'genesis_hub_user'
     
-    if user_id_cookie and len(user_id_cookie) == 32:
-        return user_id_cookie
+    if request.cookies.get(cookie_name):
+        user_id = request.cookies.get(cookie_name)
+        return user_id
     
     ip = request.remote_addr
     user_agent = request.headers.get('User-Agent', '')
-    browser_info = request.headers.get('Accept-Language', '')
+    timestamp = str(time.time())
+    random_part = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=16))
     
-    combined = f"{ip}{user_agent[:50]}{browser_info}"
-    new_user_id = hashlib.md5(combined.encode()).hexdigest()
+    combined = f"{ip}{user_agent}{timestamp}{random_part}"
+    user_id = hashlib.sha256(combined.encode()).hexdigest()
     
-    return new_user_id
+    return user_id
+
+def set_user_cookie(response, user_id):
+    expiry = datetime.now() + timedelta(days=365)
+    
+    resp = make_response(response)
+    resp.set_cookie(
+        'genesis_hub_user',
+        user_id,
+        expires=expiry,
+        httponly=True,
+        secure=False,
+        samesite='Lax'
+    )
+    
+    return resp
 
 def generate_key():
     key_parts = []
@@ -163,12 +180,12 @@ def linkvertise_success():
     
     save_linkvertise_verification(user_id)
     
-    return f'''
+    html_content = f'''
     <html>
     <head>
         <meta charset="UTF-8">
         <meta http-equiv="refresh" content="2;url={YOUR_WEBSITE}">
-        <title>Verificacion Completada</title>
+        <title>✅ Verificación Completada</title>
         <style>
             body {{ background: #000; color: #fff; font-family: Arial; text-align: center; padding: 100px 20px; }}
             .success {{ color: #0f0; font-size: 24px; margin: 20px 0; }}
@@ -176,9 +193,11 @@ def linkvertise_success():
         </style>
     </head>
     <body>
-        <div class="success">VERIFICACION COMPLETADA</div>
+        <div class="success">✅ ¡VERIFICACIÓN COMPLETADA!</div>
         <div class="redirect">Redirigiendo a Genesis Hub...</div>
         <script>
+            document.cookie = "genesis_hub_user={user_id}; path=/; max-age=31536000";
+            
             setTimeout(function() {{
                 window.location.href = "{YOUR_WEBSITE}";
             }}, 2000);
@@ -186,6 +205,8 @@ def linkvertise_success():
     </body>
     </html>
     '''
+    
+    return set_user_cookie(html_content, user_id)
 
 @app.route("/check-user-status", methods=["GET"])
 def check_user_status():
@@ -200,7 +221,7 @@ def check_user_status():
         remaining = user_key.get("expires_at", 0) - current_time
         
         if remaining > 0:
-            return jsonify({
+            response = jsonify({
                 "success": True,
                 "has_active_key": True,
                 "requires_linkvertise": False,
@@ -214,25 +235,28 @@ def check_user_status():
                 },
                 "message": "Tienes una key activa"
             })
+            return set_user_cookie(response, user_id)
     
     has_linkvertise = check_linkvertise_verification(user_id)
     
     if has_linkvertise:
-        return jsonify({
+        response = jsonify({
             "success": True,
             "has_active_key": False,
             "requires_linkvertise": False,
             "can_generate_key": True,
             "message": "Puedes generar una nueva key"
         })
+        return set_user_cookie(response, user_id)
     else:
-        return jsonify({
+        response = jsonify({
             "success": True,
             "has_active_key": False,
             "requires_linkvertise": True,
             "can_generate_key": False,
             "message": "Necesitas verificar primero"
         })
+        return set_user_cookie(response, user_id)
 
 @app.route("/generate-key", methods=["POST"])
 def generate_key_endpoint():
@@ -244,12 +268,13 @@ def generate_key_endpoint():
     has_linkvertise = check_linkvertise_verification(user_id)
     
     if not has_linkvertise:
-        return jsonify({
+        response = jsonify({
             "success": False,
             "requires_linkvertise": True,
-            "message": "Completa la verificacion primero",
+            "message": "Completa la verificación primero",
             "linkvertise_url": LINKVERTISE_URL
-        }), 403
+        })
+        return set_user_cookie(response, user_id), 403
     
     key = generate_key()
     expires_at = current_time + COOLDOWN
@@ -266,7 +291,7 @@ def generate_key_endpoint():
     
     save_key(user_id, key_data)
     
-    return jsonify({
+    response = jsonify({
         "success": True,
         "key": key,
         "expires_at": key_data["expires_at_formatted"],
@@ -276,8 +301,9 @@ def generate_key_endpoint():
             "seconds": 0,
             "total_seconds": COOLDOWN
         },
-        "message": "Key generada exitosamente"
+        "message": "¡Key generada exitosamente! Válida por 24 horas."
     })
+    return set_user_cookie(response, user_id)
 
 @app.route("/check-key/<key>", methods=["GET"])
 def check_key(key):
@@ -318,7 +344,7 @@ def check_key(key):
                 "exists": True,
                 "expired": False,
                 "invalid_linkvertise": True,
-                "message": "Key requiere verificacion"
+                "message": "Key requiere verificación"
             })
         
         time_left = expires_at - current_time
@@ -335,7 +361,7 @@ def check_key(key):
                 "seconds": int(time_left % 60)
             },
             "can_use_in_roblox": True,
-            "message": "Key valida"
+            "message": "Key válida"
         })
     
     return jsonify({
@@ -386,7 +412,7 @@ def verify_roblox():
             return jsonify({
                 "success": True,
                 "valid": True,
-                "message": "Key verificada"
+                "message": "Key verificada exitosamente"
             })
         else:
             return jsonify({"success": False, "error": "Key expired"}), 410
